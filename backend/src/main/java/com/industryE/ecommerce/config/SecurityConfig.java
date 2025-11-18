@@ -54,16 +54,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf.disable()) // CSRF disabled for testing
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                .requestMatchers("/api/users/profile").authenticated()
-                .requestMatchers("/api/orders/**").authenticated()
-                .requestMatchers("/api/cart/**").authenticated()
+                // GUEST MODE: Allow browsing without authentication
+                // 1. Auth endpoints - Public (Login/Register)
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
+                
+                // 2. ALL GET requests - Public (browse products, view pages, fetch data)
+                .requestMatchers(HttpMethod.GET, "/**").permitAll()
+                
+                // 3. H2 Console - Public (development)
                 .requestMatchers("/h2-console/**").permitAll()
+                
+                // 4. All "unsafe" actions require authentication (POST, PUT, DELETE, PATCH)
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
