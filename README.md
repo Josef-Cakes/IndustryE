@@ -78,7 +78,7 @@ IndustryE/
 
 #### Step 1: Clone the Repository
 ```bash
-git clone <https://github.com/Josef-Cakes/IndustryE.git>
+git clone https://github.com/Josef-Cakes/IndustryE.git
 cd IndustryE
 ```
 
