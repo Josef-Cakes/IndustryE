@@ -37,7 +37,7 @@ A full-stack e-commerce platform built with React frontend and Spring Boot backe
 - **Spring Data JPA** - Data access
 - **H2 Database** - File-based persistent database
 - **JJWT** - Token-based authentication (v0.11.5)
-- **Maven** - Build tool
+- **Maven Wrapper** - Build tool (included, no installation needed)
 - **Axios** - HTTP client for API calls
 
 ## 📁 Project Structure
@@ -69,49 +69,39 @@ IndustryE/
 ## 🚦 Getting Started
 
 ### Prerequisites
-- **Node.js** (v18 or higher)
-- **Java 17** or higher
-- **Maven 3.6** or higher
+- **Node.js** (v18 or higher) - [Download Node.js](https://nodejs.org/)
+- **Java 17** or higher - [Download Java](https://www.oracle.com/java/technologies/downloads/)
 
-### Installing Maven (If Not Installed)
+> **Note**: Maven is included via the Maven wrapper (`mvnw` / `mvnw.cmd`), so no separate installation is needed!
 
-Download and install Maven:
-1. **Download**: Go to https://maven.apache.org/download.cgi
-2. **Extract**: Extract to a location like `C:\apache-maven-3.9.6`
-3. **Add to PATH**: 
-   - Open System Properties → Environment Variables
-   - Add `C:\apache-maven-3.9.6\bin` to your PATH variable
-   - Restart your terminal
-4. **Verify**: Run `mvn --version` to confirm installation
+### Quick Start
 
-### 1. Clone the Repository
+#### Step 1: Clone the Repository
 ```bash
-git clone <repository-url>
+git clone <https://github.com/Josef-Cakes/IndustryE.git>
 cd IndustryE
 ```
 
-### 2. Start the Backend
+#### Step 2: Start the Backend
 
-First, ensure you're in the backend directory:
+Navigate to the backend directory and start the server:
 
+**Windows:**
 ```bash
 cd backend
+.\mvnw.cmd spring-boot:run
 ```
 
-Then build and run the backend:
-
-```bash
-mvn clean install
-mvn spring-boot:run
-```
-
-> **Note**: If you get "mvn not recognized" error, you need to install Maven. See "Installing Maven" above.
-
-The backend will be available at:
+The backend will start automatically and be available at:
 - **API**: `http://localhost:8080`
 - **H2 Console**: `http://localhost:8080/h2-console`
 
-### 3. Start the Frontend
+> **Tip**: The first run may take a minute as dependencies are downloaded. Subsequent runs will be faster.
+
+#### Step 3: Start the Frontend
+
+Open a new terminal window and start the frontend:
+
 ```bash
 cd ecommerce
 npm install
@@ -119,6 +109,13 @@ npm run dev
 ```
 
 The frontend will be available at: `http://localhost:5173`
+
+### 🎉 You're All Set!
+
+Once both servers are running:
+1. Open your browser to `http://localhost:5173`
+2. Browse products as a guest (no login required)
+3. Register a new account or login with admin credentials (see below)
 
 ## 🔑 Authentication
 
@@ -193,9 +190,16 @@ npm run preview # Preview production build
 ### Backend Development
 ```bash
 cd backend
-mvn spring-boot:run  # Start development server
-mvn test            # Run tests
-mvn clean install   # Build project
+
+# Windows
+.\mvnw.cmd spring-boot:run  # Start development server
+.\mvnw.cmd test             # Run tests
+.\mvnw.cmd clean install    # Build project
+
+# Linux/Mac
+./mvnw spring-boot:run      # Start development server
+./mvnw test                 # Run tests
+./mvnw clean install        # Build project
 ```
 
 ### Database Access
@@ -272,9 +276,10 @@ Access the H2 Console to view your database:
 ## 🔧 Troubleshooting
 
 ### Backend Issues
-- **Maven not found**: Install Maven and add to PATH. See `backend/SETUP.md` for details
+- **Maven wrapper not working**: Make sure you're using `.\mvnw.cmd` (Windows) or `./mvnw` (Linux/Mac) from the `backend` directory
 - **Database connection error**: Ensure H2 database files exist in `backend/data/` directory
-- **Port 8080 already in use**: Change `server.port` in `application.properties`
+- **Port 8080 already in use**: Change `server.port` in `backend/src/main/resources/application.properties`
+- **Java version error**: Ensure you have Java 17 or higher installed (`java -version`)
 
 ### Frontend Issues
 - **npm install fails**: Clear cache with `npm cache clean --force`
