@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
+import ReviewModal from '../components/ReviewModal'
 import '../css/OrderHistoryPage.css'
 
 const OrderHistoryPage = ({ user }) => {
@@ -10,6 +17,14 @@ const OrderHistoryPage = ({ user }) => {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [loadingOrderDetails, setLoadingOrderDetails] = useState(false)
+  
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewProductId, setReviewProductId] = useState(null)
+  const [reviewProductName, setReviewProductName] = useState('')
+  
+  // Success Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   
   useEffect(() => {
     fetchUserOrders()
@@ -97,6 +112,68 @@ const OrderHistoryPage = ({ user }) => {
   const handleReorder = (order) => {
     // TODO: Implement reorder functionality
     alert('Reorder functionality will be implemented soon!')
+  }
+
+  const handleMarkAsReceived = async (orderId) => {
+    try {
+      const token = localStorage.getItem('token')
+      
+      const response = await axios.put(`http://localhost:8080/api/orders/${orderId}/mark-received`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Refresh orders to show updated status
+      await fetchUserOrders()
+      
+      // Fetch the updated order details to get items for review
+      const orderDetailsResponse = await axios.get(`http://localhost:8080/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      const order = orderDetailsResponse.data
+      
+      console.log('Order data:', order) // Debug
+      console.log('Order items:', order.orderItems) // Debug
+      
+      // If order has items, prompt user to review the first item
+      if (order.orderItems && order.orderItems.length > 0) {
+        const firstItem = order.orderItems[0]
+        console.log('First item:', firstItem) // Debug
+        
+        // Try to get productId from the order item
+        const productId = firstItem.productId || firstItem.product?.id
+        console.log('Product ID:', productId) // Debug
+        
+        if (productId) {
+          // Immediately open review modal without alert
+          setReviewProductId(productId)
+          setReviewProductName(firstItem.productName || firstItem.product?.name || 'Product')
+          setShowReviewModal(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error marking order as received:', error)
+      alert(error.response?.data?.message || error.response?.data || 'Failed to mark order as received. Please try again.')
+    }
+  }
+
+  const handleWriteReview = (item) => {
+    // Use productId if available, fallback to parsing from item or checking structure
+    const productId = item.productId || item.product?.id
+    
+    if (!productId) {
+      console.error('Product ID not found for review', item)
+      return
+    }
+    
+    setReviewProductId(productId)
+    setReviewProductName(item.productName || item.product?.name || 'Product')
+    setShowReviewModal(true)
   }
 
   if (loading) {
@@ -234,6 +311,14 @@ const OrderHistoryPage = ({ user }) => {
                   >
                     {loadingOrderDetails ? 'Loading...' : 'View Details'}
                   </button>
+                  {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                    <button 
+                      className="action-btn mark-received-btn"
+                      onClick={() => handleMarkAsReceived(order.id)}
+                    >
+                      ✓ Mark as Received
+                    </button>
+                  )}
                   {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && (
                     <button 
                       className="action-btn reorder-btn"
@@ -298,6 +383,18 @@ const OrderHistoryPage = ({ user }) => {
                             <p>Unit Price: {formatCurrency(item.unitPrice)}</p>
                             <p><strong>Total: {formatCurrency(item.totalPrice)}</strong></p>
                           </div>
+                          
+                          {(selectedOrder.status === 'COMPLETED' || selectedOrder.status === 'DELIVERED') && (
+                            <div style={{ marginLeft: '1rem' }}>
+                              <button 
+                                className="action-btn"
+                                style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                onClick={() => handleWriteReview(item)}
+                              >
+                                ★ Write Review
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -334,6 +431,92 @@ const OrderHistoryPage = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <ReviewModal
+          open={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          productId={reviewProductId}
+          productName={reviewProductName}
+          onReviewSubmitted={() => {
+            setShowReviewModal(false)
+            setShowSuccessModal(true)
+          }}
+        />
+      )}
+
+      {/* Success Modal */}
+      <Dialog
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        PaperProps={{
+          style: {
+            backgroundColor: '#1a1a1a',
+            color: '#ffffff',
+            backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            minWidth: '400px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          fontSize: '1.3rem',
+          fontWeight: 600,
+          color: '#22c55e',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>✓</span> Success!
+        </DialogTitle>
+        <DialogContent 
+          sx={{ 
+            padding: '24px !important',
+            display: 'flex !important', 
+            justifyContent: 'center !important', 
+            alignItems: 'center !important',
+            minHeight: '80px',
+            height: 'auto'
+          }}
+        >
+          <Typography sx={{ 
+            color: '#b3b3b3', 
+            fontSize: '1rem', 
+            lineHeight: 1.6, 
+            textAlign: 'center', 
+            margin: 0,
+            width: '100%'
+          }}>
+            Review submitted successfully! Thank you for your feedback.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ 
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '16px 24px'
+        }}>
+          <Button 
+            onClick={() => setShowSuccessModal(false)}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #ff6b35 0%, #f94c10 100%)',
+              color: '#ffffff',
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+              padding: '8px 24px',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #f94c10 0%, #e63900 100%)',
+                boxShadow: '0 4px 12px rgba(255, 107, 53, 0.4)'
+              }
+            }}
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }

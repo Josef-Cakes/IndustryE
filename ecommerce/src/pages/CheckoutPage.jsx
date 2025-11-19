@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import '../css/CheckoutPage.css'
 
-const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
+const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuantity }) => {
   const navigate = useNavigate()
   const [step, setStep] = useState(1) // 1: Shipping, 2: Payment, 3: Review
   const [shippingInfo, setShippingInfo] = useState({
@@ -285,12 +285,9 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
                               fontSize: 18,
                               cursor: 'pointer'
                             }}
-                            onClick={() => {
-                              if (item.quantity > 1) {
-                                // Call a prop or context function to update quantity
-                                if (typeof item.onUpdateQuantity === 'function') {
-                                  item.onUpdateQuantity(item.id, item.quantity - 1, item.size)
-                                }
+                            onClick={async () => {
+                              if (item.quantity > 1 && updateQuantity) {
+                                await updateQuantity(item.id, item.quantity - 1, item.size)
                               }
                             }}
                             disabled={item.quantity <= 1}
@@ -310,19 +307,20 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
                               fontSize: 18,
                               cursor: 'pointer'
                             }}
-                            onClick={() => {
-                              // Call a prop or context function to update quantity
-                              if (typeof item.onUpdateQuantity === 'function') {
-                                item.onUpdateQuantity(item.id, item.quantity + 1, item.size)
+                            onClick={async () => {
+                              if (updateQuantity) {
+                                await updateQuantity(item.id, item.quantity + 1, item.size)
                               }
                             }}
                             aria-label="Increase quantity"
                           >+</button>
                         </div>
-                        <p style={{ margin: '2px 0', color: '#ff6b35', fontWeight: 600, fontSize: 15 }}>₱{item.price}</p>
+                        <p style={{ margin: '2px 0', color: '#ff6b35', fontWeight: 600, fontSize: 15 }}>
+                          ₱{parseFloat(item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} x {item.quantity}
+                        </p>
                       </div>
                       <div className="item-total" style={{ fontWeight: 700, color: '#ff6b35', fontSize: 16 }}>
-                        ₱{(item.price * item.quantity).toFixed(2)}
+                        ₱{(item.price * item.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   ))}
@@ -330,7 +328,7 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
                 <div className="order-totals">
                   <div className="total-row">
                     <span>Subtotal:</span>
-                    <span>₱{calculateTotal().toFixed(2)}</span>
+                    <span>₱{calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="total-row">
                     <span>Shipping:</span>
@@ -338,7 +336,7 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
                   </div>
                   <div className="total-row final">
                     <span>Total:</span>
-                    <span>₱{calculateTotal().toFixed(2)}</span>
+                    <span>₱{calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -383,13 +381,13 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated }) => {
                   {item.size && <p style={{ margin: 0, color: '#888', fontSize: 13 }}>Size: {item.size}</p>}
                 </div>
                 <span style={{ fontWeight: 600, color: '#ff6b35', marginLeft: 'auto' }}>
-                  ₱{(item.price * item.quantity).toFixed(2)}
+                  ₱{(item.price * item.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             ))}
           </div>
           <div className="sidebar-total">
-            <strong>Total: ₱{calculateTotal().toFixed(2)}</strong>
+            <strong>Total: ₱{calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
           </div>
         </div>
       </div>

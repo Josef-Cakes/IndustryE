@@ -11,7 +11,7 @@ const CartItem = ({ item, isLoading, onUpdateQuantity, onRemove }) => {
         <h3>{item.name}</h3>
         <p className="item-color">{item.color}</p>
         {item.size && <p className="item-size">Size: {item.size}</p>}
-        <p className="item-price">₱ {item.price}</p>
+        <p className="item-price">₱ {parseFloat(item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       </div>
       <div className="item-quantity">
         <button 
@@ -31,7 +31,7 @@ const CartItem = ({ item, isLoading, onUpdateQuantity, onRemove }) => {
         </button>
       </div>
       <div className="item-total">
-        ₱ {(item.price * item.quantity).toFixed(2)}
+        ₱ {(item.price * item.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
       <button 
         className="remove-btn" 

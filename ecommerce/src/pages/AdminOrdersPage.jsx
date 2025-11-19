@@ -26,7 +26,7 @@ import OrderDetailsDialog from "../components/OrderDetailsDialog"
 import axiosInstance from "../utils/axiosConfig"
 
 const paymentStatusOptions = ["PENDING", "PAID", "FAILED"]
-const deliveryStatusOptions = ["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]
+const deliveryStatusOptions = ["PROCESSING", "SHIPPED", "DELIVERED", "COMPLETED", "CANCELLED"]
 
 export default function AdminOrdersPage({ onNavigate }) {
   const navigate = useNavigate()

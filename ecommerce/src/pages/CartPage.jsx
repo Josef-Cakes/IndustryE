@@ -135,7 +135,7 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
           <h3>Order Summary</h3>
           <div className="summary-row">
             <span>Subtotal</span>
-            <span>₱ {calculateTotal().toFixed(2)}</span>
+            <span>₱ {calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="summary-row">
             <span>Shipping</span>
@@ -143,7 +143,7 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
           </div>
           <div className="summary-total">
             <span>Total</span>
-            <span>₱ {calculateTotal().toFixed(2)}</span>
+            <span>₱ {calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           
           {isAuthenticated ? (

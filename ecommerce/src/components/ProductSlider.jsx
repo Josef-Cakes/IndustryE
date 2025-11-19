@@ -114,7 +114,7 @@ const ProductSlider = ({ products, currentIndex, onViewProduct, onImageMouseDown
                     fontSize: "0.9rem"
                   }}
                 >
-                  ({product.rating})
+                  ({typeof product.rating === 'number' ? product.rating.toFixed(1) : product.rating})
                 </span>
               </div>
               <div

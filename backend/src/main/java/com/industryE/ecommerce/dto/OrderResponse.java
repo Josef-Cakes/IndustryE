@@ -79,6 +79,7 @@ public class OrderResponse {
     }
     
     public static class OrderItemResponse {
+        private Long productId;
         private String productName;
         private String productImage;
         private String size;
@@ -90,6 +91,9 @@ public class OrderResponse {
         public OrderItemResponse() {}
         
         // Getters and setters
+        public Long getProductId() { return productId; }
+        public void setProductId(Long productId) { this.productId = productId; }
+        
         public String getProductName() { return productName; }
         public void setProductName(String productName) { this.productName = productName; }
         

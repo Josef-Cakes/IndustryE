@@ -77,6 +77,7 @@ public class OrderService {
 
                     OrderItem orderItem = new OrderItem();
                     orderItem.setOrder(order); // Set reference to order
+                    orderItem.setProductId(itemRequest.getProductId());
                     orderItem.setProductName(itemRequest.getName());
                     orderItem.setProductImage(itemRequest.getImage() != null ? itemRequest.getImage() : "");
                     orderItem.setSize(itemRequest.getSize());
@@ -119,6 +120,27 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found or access denied"));
         return convertToResponse(order);
     }
+    
+    @Transactional
+    public OrderResponse markOrderAsReceived(Long orderId, Long userId) {
+        // Ensure order belongs to the requesting user
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new RuntimeException("Order not found or access denied"));
+        
+        // Don't allow marking as received if already completed or cancelled
+        if (order.getStatus().equals("COMPLETED")) {
+            throw new RuntimeException("Order is already marked as completed");
+        }
+        if (order.getStatus().equals("CANCELLED")) {
+            throw new RuntimeException("Cannot mark cancelled orders as received");
+        }
+        
+        // Mark as COMPLETED
+        order.setStatus("COMPLETED");
+        Order updatedOrder = orderRepository.save(order);
+        
+        return convertToResponse(updatedOrder);
+    }
 
     private String generateOrderNumber() {
         return "ORD-" + System.currentTimeMillis();
@@ -158,6 +180,7 @@ public class OrderService {
 
     private OrderResponse.OrderItemResponse convertOrderItemToResponse(OrderItem orderItem) {
         OrderResponse.OrderItemResponse response = new OrderResponse.OrderItemResponse();
+        response.setProductId(orderItem.getProductId());
         response.setProductName(orderItem.getProductName());
         response.setProductImage(orderItem.getProductImage());
         response.setSize(orderItem.getSize());

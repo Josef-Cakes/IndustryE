@@ -220,6 +220,12 @@
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.status-shipped {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
 /* Order Details */
 .order-details {
   display: grid;
@@ -346,6 +352,20 @@
   background: transparent;
   color: var(--accent-orange);
   border-color: var(--accent-orange);
+}
+
+.mark-received-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mark-received-btn:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a4292 100%);
+  border-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
 .reorder-btn:hover {

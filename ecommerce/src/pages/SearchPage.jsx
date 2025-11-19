@@ -373,7 +373,7 @@ const SearchPage = ({ addToCart, isAuthenticated }) => {
                           fontSize: "0.9rem"
                         }}
                       >
-                        ({shoe.rating})
+                        ({typeof shoe.rating === 'number' ? shoe.rating.toFixed(1) : shoe.rating})
                       </span>
                     </div>
                     <div
@@ -543,7 +543,7 @@ const SearchPage = ({ addToCart, isAuthenticated }) => {
                 <p className="modal-product-color">Category: {selectedShoe.category}</p>
                 <div className="modal-product-rating">
                   <span className="stars">⭐⭐⭐⭐⭐</span>
-                  <span className="rating-value">({selectedShoe.rating})</span>
+                  <span className="rating-value">({typeof selectedShoe.rating === 'number' ? selectedShoe.rating.toFixed(1) : selectedShoe.rating})</span>
                 </div>
                 <div className="modal-product-price">₱{selectedShoe.price}</div>
                 <p className="modal-product-description">
