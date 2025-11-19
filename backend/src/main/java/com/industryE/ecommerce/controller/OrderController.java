@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -100,6 +101,28 @@ public class OrderController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ErrorResponse("Order not found or access denied"));
+        }
+    }
+    
+    @PutMapping("/{orderId}/mark-received")
+    public ResponseEntity<?> markOrderAsReceived(@PathVariable Long orderId, HttpServletRequest httpRequest) {
+        try {
+            // Extract and validate user from JWT token
+            String token = extractTokenFromRequest(httpRequest);
+            String email = jwtTokenProvider.getUsernameFromToken(token);
+            User user = userService.findByEmail(email);
+            
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("User not found"));
+            }
+            
+            // Mark order as completed/received for the authenticated user
+            OrderResponse order = orderService.markOrderAsReceived(orderId, user.getId());
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
         }
     }
     

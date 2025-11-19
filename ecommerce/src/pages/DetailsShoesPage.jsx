@@ -33,6 +33,7 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
   const [modalOpen, setModalOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
+  const [reviews, setReviews] = useState([])
 
   const autoSlideRef = useRef()
 
@@ -43,6 +44,7 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
 
   useEffect(() => {
     fetchShoeDetails()
+    fetchReviews()
   }, [id])
 
   // Auto-slide effect for image gallery
@@ -61,6 +63,15 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
 
     return () => clearInterval(autoSlideRef.current)
   }, [shoe, shoe?.images?.length, modalOpen])
+
+  const fetchReviews = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/reviews/product/${id}`)
+      setReviews(response.data)
+    } catch (error) {
+      console.error('Error loading reviews:', error)
+    }
+  }
 
   const fetchShoeDetails = async () => {
     try {
@@ -115,8 +126,9 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
     // Check size availability (latest from backend)
     const sizeInfo = sizeInventory.find(inv => inv.size === selectedSize)
     if (!sizeInfo || sizeInfo.availableQuantity < quantity) {
+      const availableQty = sizeInfo ? sizeInfo.availableQuantity : 0
       setAlertMessage(
-        `Sorry, size ${selectedSize} is out of stock. Please select another size.`
+        `Sorry, only ${availableQty} item(s) available in size ${selectedSize}. Please adjust quantity or select another size.`
       )
       setAlertType('error')
       return
@@ -375,7 +387,7 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
                     </span>
                   ))}
                 </div>
-                <span className="rating-text">({shoe.rating})</span>
+                <span className="rating-text">({typeof shoe.rating === 'number' ? shoe.rating.toFixed(1) : shoe.rating})</span>
               </div>
               <div className="product-price">
                 <span className="price">₱{parseFloat(shoe.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -469,7 +481,7 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
                   onClick={handleAddToCart}
                   disabled={!selectedSize || !isSizeAvailable(selectedSize)}
                 >
-                  Add to Cart - ₱{(shoe.price * quantity).toFixed(2)}
+                  Add to Cart - ₱{(shoe.price * quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </button>
               )}
               {!isAuthenticated && (
@@ -495,13 +507,47 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
             {/* Additional Info */}
             <div className="additional-info">
               <div className="info-item">
-                <strong>Category:</strong> {shoe.category}
+                <span><strong>Category:</strong> <span style={{ textTransform: 'capitalize', color: 'var(--accent-orange)' }}>{shoe.category}</span></span>
               </div>
               <div className="info-item">
-                <strong>Product ID:</strong> {shoe.id}
+                <span><strong>Product ID:</strong> {shoe.id}</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="reviews-section">
+          <h2>Customer Reviews</h2>
+          
+          {reviews.length === 0 ? (
+            <div className="no-reviews">
+              <p>No reviews yet. Be the first to review this product!</p>
+            </div>
+          ) : (
+            <div className="reviews-list">
+              {reviews.map((review) => (
+                <div key={review.id} className="review-card">
+                  <div className="review-header">
+                    <div className="review-author">
+                      <span className="author-name">{review.userName || 'Anonymous'}</span>
+                      <span className="review-date">
+                        {new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="review-rating">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i}>
+                          {i < review.rating ? '★' : '☆'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="review-content">"{review.comment}"</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Alert Dialog for messages */}

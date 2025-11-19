@@ -2,14 +2,17 @@ package com.industryE.ecommerce.config;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.industryE.ecommerce.entity.Product;
+import com.industryE.ecommerce.entity.Review;
 import com.industryE.ecommerce.entity.User;
 import com.industryE.ecommerce.repository.ProductRepository;
+import com.industryE.ecommerce.repository.ReviewRepository;
 import com.industryE.ecommerce.repository.UserRepository;
 import com.industryE.ecommerce.service.ProductSizeInventoryService;
 
@@ -21,6 +24,9 @@ public class DataInitializer implements CommandLineRunner {
     
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
     
     @Autowired
     private ProductSizeInventoryService sizeInventoryService;
@@ -125,18 +131,92 @@ public class DataInitializer implements CommandLineRunner {
             
             productRepository.saveAll(sampleProducts);
             
-            // Initialize size inventories for all products with limited stock (3 per size)
+            // Initialize size inventories for all products with good stock
             List<String> standardSizes = Arrays.asList("7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12");
-            int defaultQuantityPerSize = 1; // Limited inventory - 3 stocks per size
+            int defaultQuantityPerSize = 50; // Good inventory - 50 stocks per size
             
             for (Product product : sampleProducts) {
                 sizeInventoryService.initializeInventoryForProduct(product.getId(), standardSizes, defaultQuantityPerSize);
             }
             
             System.out.println("Sample products and size inventories created successfully");
+            
+            // Create sample reviews
+            createSampleReviews(sampleProducts);
         }
     }
     
+    private void createSampleReviews(List<Product> products) {
+        // Create multiple demo users with different names for variety
+        String[] demoUserNames = {
+            "Sneaker Head",
+            "Jordan Fan",
+            "Nike Enthusiast",
+            "Shoe Collector",
+            "Kicks Lover",
+            "Sneaker Pro",
+            "Footwear Expert",
+            "Style Seeker"
+        };
+        
+        List<User> demoUsers = new java.util.ArrayList<User>();
+        
+        // Create demo users if they don't exist
+        for (int i = 0; i < demoUserNames.length; i++) {
+            String email = "demo" + i + "@shoestop.com";
+            User demoUser = userRepository.findByEmail(email).orElse(null);
+            if (demoUser == null) {
+                demoUser = new User();
+                demoUser.setName(demoUserNames[i]);
+                demoUser.setEmail(email);
+                demoUser.setPassword("password");
+                demoUser.setRole(User.Role.USER);
+                demoUser.setPhone("+098765432" + i);
+                demoUser.setLocation("Manila");
+                demoUser.setBio("I love shoes!");
+                userRepository.save(demoUser);
+            }
+            demoUsers.add(demoUser);
+        }
+
+        String[] positiveComments = {
+            "Absolutely love these kicks! Super comfortable.",
+            "Great quality and fits perfectly.",
+            "Fast delivery and the box was in perfect condition.",
+            "Best purchase I've made this year.",
+            "Looks even better in person!"
+        };
+        
+        Random random = new Random();
+        
+        for (Product product : products) {
+            // Add 2-4 reviews per product
+            int reviewCount = 2 + random.nextInt(3);
+            double ratingSum = 0;
+            
+            for (int i = 0; i < reviewCount; i++) {
+                int rating = 4 + random.nextInt(2); // 4 or 5 stars
+                String comment = positiveComments[random.nextInt(positiveComments.length)];
+                
+                // Randomly select a demo user for each review
+                User selectedUser = demoUsers.get(random.nextInt(demoUsers.size()));
+                
+                Review review = new Review(rating, comment, selectedUser, product);
+                // Spread out creation times slightly if needed, but default is now()
+                reviewRepository.save(review);
+                ratingSum += rating;
+            }
+            
+            // Update product average rating
+            if (reviewCount > 0) {
+                product.setRating(ratingSum / reviewCount);
+                productRepository.save(product);
+            }
+        }
+        
+        System.out.println("Sample reviews created successfully");
+    }
+
     private void createAdminUser() {
         // Check if admin user already exists
         if (userRepository.findByEmail("admin@shoestop.com").isEmpty()) {

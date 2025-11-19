@@ -68,7 +68,13 @@ public class SecurityConfig {
                 // 3. H2 Console - Public (development)
                 .requestMatchers("/h2-console/**").permitAll()
                 
-                // 4. All "unsafe" actions require authentication (POST, PUT, DELETE, PATCH)
+                // 4. User Order actions - Authenticated users
+                .requestMatchers(HttpMethod.PUT, "/api/orders/*/mark-received").authenticated()
+                .requestMatchers("/api/orders/**").authenticated()
+                .requestMatchers("/api/cart/**").authenticated()
+                .requestMatchers("/api/reviews/**").authenticated()
+                
+                // 5. All other "unsafe" actions require authentication (POST, PUT, DELETE, PATCH)
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

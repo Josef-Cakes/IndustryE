@@ -97,7 +97,13 @@ const ShoeCard = ({ shoe, onViewProduct, onImageMouseDown, onImageMouseUp, onIma
             marginBottom: 16
           }}
         >
-          <span className="stars">⭐⭐⭐⭐⭐</span>
+          <span className="stars">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} style={{ opacity: i < Math.floor(shoe.rating) ? 1 : 0.3 }}>
+                ⭐
+              </span>
+            ))}
+          </span>
           <span
             className="rating-value"
             style={{
@@ -105,7 +111,7 @@ const ShoeCard = ({ shoe, onViewProduct, onImageMouseDown, onImageMouseUp, onIma
               fontSize: "0.9rem"
             }}
           >
-            ({shoe.rating})
+            ({typeof shoe.rating === 'number' ? shoe.rating.toFixed(1) : shoe.rating})
           </span>
         </div>
         <div

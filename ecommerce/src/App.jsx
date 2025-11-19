@@ -422,6 +422,7 @@ function AppContent() {
               user={user} 
               onOrderComplete={handleOrderComplete}
               isAuthenticated={isAuthenticated}
+              updateQuantity={updateQuantity}
             />
           } />
           <Route path="/orders" element={
