@@ -31,6 +31,42 @@ public class ReviewService {
         return reviews.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    public ReviewDTO getUserReviewForProduct(Long userId, Long productId) {
+        return reviewRepository.findByUserIdAndProductId(userId, productId)
+                .map(this::convertToDTO)
+                .orElse(null);
+    }
+
+    public ReviewDTO updateReview(Long userId, Long reviewId, ReviewDTO reviewDto) {
+        System.out.println("Updating review - userId: " + userId + ", reviewId: " + reviewId);
+        
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+
+        System.out.println("Found review - review owner userId: " + review.getUser().getId());
+
+        // Verify the review belongs to the user
+        if (!review.getUser().getId().equals(userId)) {
+            System.out.println("User ID mismatch! Request userId: " + userId + ", Review owner: " + review.getUser().getId());
+            throw new RuntimeException("You can only edit your own reviews");
+        }
+
+        // Store old rating for recalculation
+        int oldRating = review.getRating();
+
+        // Update the review
+        review.setRating(reviewDto.getRating());
+        review.setComment(reviewDto.getComment());
+
+        Review savedReview = reviewRepository.save(review);
+
+        // Recalculate product average rating
+        recalculateProductRating(review.getProduct());
+
+        System.out.println("Review updated successfully");
+        return convertToDTO(savedReview);
+    }
+
     public ReviewDTO addReview(Long userId, Long productId, ReviewDTO reviewDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -68,6 +104,18 @@ public class ReviewService {
         
         double newAverage = sum / count;
         product.setRating(newAverage); // Assuming Product has setRating(double)
+        productRepository.save(product);
+    }
+
+    private void recalculateProductRating(Product product) {
+        List<Review> reviews = reviewRepository.findByProductIdOrderByCreatedAtDesc(product.getId());
+        
+        if (reviews.isEmpty()) {
+            product.setRating(0.0);
+        } else {
+            double average = reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+            product.setRating(average);
+        }
         productRepository.save(product);
     }
 

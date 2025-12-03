@@ -338,14 +338,16 @@
 }
 
 .view-details-btn {
-  background: transparent;
-  color: var(--accent-blue);
-  border-color: var(--accent-blue);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-white);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .view-details-btn:hover {
-  background: var(--accent-blue);
-  color: white;
+  background: rgba(255, 107, 53, 0.1);
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+  transform: translateY(-2px);
 }
 
 .reorder-btn {
@@ -355,22 +357,45 @@
 }
 
 .mark-received-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff6b35 0%, #f94c10 100%);
   color: white;
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
 }
 
 .mark-received-btn:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #6a4292 100%);
-  border-color: #5568d3;
+  background: linear-gradient(135deg, #f94c10 0%, #e63900 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
 }
 
 .reorder-btn:hover {
   background: var(--accent-orange);
   color: white;
+}
+
+/* Review Action Button */
+.review-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(249, 76, 16, 0.15) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.4);
+  border-radius: 6px;
+  color: var(--accent-orange);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.review-action-btn:hover {
+  background: linear-gradient(135deg, #ff6b35 0%, #f94c10 100%);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
 }
 
 /* Responsive Design */
@@ -410,6 +435,33 @@
   }
 }
 
+/* Load More Button */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.load-more-btn {
+  background: transparent;
+  color: var(--accent-orange);
+  border: 2px solid var(--accent-orange);
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.load-more-btn:hover {
+  background: var(--accent-orange);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
 @media (max-width: 480px) {
   .order-history {
     padding: 0.5rem 0.25rem 1rem 0.25rem;
@@ -430,6 +482,11 @@
   .action-btn {
     flex: 1;
     text-align: center;
+  }
+
+  .load-more-btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
   }
 }
 

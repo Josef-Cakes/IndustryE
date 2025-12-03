@@ -50,9 +50,13 @@ public class Product {
     @Column(name = "rating")
     private Double rating = 4.5;
     
-    // Available sizes for shoes (stored as JSON string)
+    // Available sizes for shoes (stored as JSON string) - e.g., ["7", "7.5", "8"]
     @Column(name = "available_sizes", columnDefinition = "TEXT")
     private String availableSizes;
+    
+    // Size inventory stored as JSON - e.g., {"7": {"quantity": 50, "reserved": 0}, "7.5": {"quantity": 50, "reserved": 0}}
+    @Column(name = "size_inventory", columnDefinition = "TEXT")
+    private String sizeInventory;
     
     @NotBlank(message = "Category is required")
     @Column(nullable = false)
@@ -147,6 +151,14 @@ public class Product {
     
     public void setAvailableSizes(String availableSizes) {
         this.availableSizes = availableSizes;
+    }
+    
+    public String getSizeInventory() {
+        return sizeInventory;
+    }
+    
+    public void setSizeInventory(String sizeInventory) {
+        this.sizeInventory = sizeInventory;
     }
     
     public String getCategory() {

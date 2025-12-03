@@ -14,7 +14,8 @@ public class ProductDTO {
     private String color;
     private String brand;
     private Double rating;
-    private List<ProductSizeInventoryDTO> sizeInventory;
+    private String sizeInventoryJson; // Raw JSON from database
+    private List<ProductSizeInventoryDTO> sizeInventory; // Parsed inventory for frontend
     
     // Default constructor
     public ProductDTO() {
@@ -136,6 +137,14 @@ public class ProductDTO {
     
     public void setRating(Double rating) {
         this.rating = rating;
+    }
+    
+    public String getSizeInventoryJson() {
+        return sizeInventoryJson;
+    }
+    
+    public void setSizeInventoryJson(String sizeInventoryJson) {
+        this.sizeInventoryJson = sizeInventoryJson;
     }
     
     public List<ProductSizeInventoryDTO> getSizeInventory() {

@@ -1,109 +1,241 @@
 package com.industryE.ecommerce.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.industryE.ecommerce.dto.ProductSizeInventoryDTO;
 import com.industryE.ecommerce.entity.Product;
-import com.industryE.ecommerce.entity.ProductSizeInventory;
 import com.industryE.ecommerce.repository.ProductRepository;
-import com.industryE.ecommerce.repository.ProductSizeInventoryRepository;
 
 @Service
 @Transactional
 public class ProductSizeInventoryService {
 
     @Autowired
-    private ProductSizeInventoryRepository inventoryRepository;
-
-    @Autowired
     private ProductRepository productRepository;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // Inner class to represent size inventory data
+    public static class SizeInventoryData {
+        public Integer quantity = 0;
+        public Integer reserved = 0;
+        
+        public SizeInventoryData() {}
+        
+        public SizeInventoryData(Integer quantity, Integer reserved) {
+            this.quantity = quantity;
+            this.reserved = reserved;
+        }
+        
+        public Integer getAvailable() {
+            return quantity - reserved;
+        }
+    }
 
     public List<ProductSizeInventoryDTO> getSizeInventoryByProductId(Long productId) {
-        return inventoryRepository.findByProductId(productId).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        return parseInventoryToDTO(product);
     }
 
     public ProductSizeInventoryDTO getSizeInventory(Long productId, String size) {
-        Optional<ProductSizeInventory> inventory = inventoryRepository.findByProductIdAndSize(productId, size);
-        return inventory.map(this::convertToDTO).orElse(null);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        SizeInventoryData data = inventory.get(size);
+        
+        if (data == null) {
+            return null;
+        }
+        
+        return new ProductSizeInventoryDTO(
+            null, // No separate ID since it's embedded
+            size,
+            data.quantity,
+            data.reserved
+        );
     }
 
     public boolean checkAvailability(Long productId, String size, Integer requestedQuantity) {
-        Optional<ProductSizeInventory> inventory = inventoryRepository.findByProductIdAndSize(productId, size);
-        return inventory.map(inv -> inv.isAvailable(requestedQuantity)).orElse(false);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        SizeInventoryData data = inventory.get(size);
+        
+        if (data == null) {
+            return false;
+        }
+        
+        return data.getAvailable() >= requestedQuantity;
     }
 
     public void reserveInventory(Long productId, String size, Integer quantity) {
-        ProductSizeInventory inventory = inventoryRepository.findByProductIdAndSize(productId, size)
-                .orElseThrow(() -> new RuntimeException("Size " + size + " not found for product"));
-
-        inventory.reserveQuantity(quantity);
-        inventoryRepository.save(inventory);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        SizeInventoryData data = inventory.get(size);
+        
+        if (data == null) {
+            throw new RuntimeException("Size " + size + " not found for product");
+        }
+        
+        if (data.getAvailable() < quantity) {
+            throw new RuntimeException("Insufficient inventory for size " + size + ". Available: " + data.getAvailable());
+        }
+        
+        data.reserved += quantity;
+        product.setSizeInventory(serializeInventory(inventory));
+        productRepository.save(product);
     }
 
     public void releaseReservedInventory(Long productId, String size, Integer quantity) {
-        Optional<ProductSizeInventory> inventoryOpt = inventoryRepository.findByProductIdAndSize(productId, size);
-        if (inventoryOpt.isPresent()) {
-            ProductSizeInventory inventory = inventoryOpt.get();
-            inventory.releaseReservedQuantity(quantity);
-            inventoryRepository.save(inventory);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        SizeInventoryData data = inventory.get(size);
+        
+        if (data != null) {
+            data.reserved = Math.max(0, data.reserved - quantity);
+            product.setSizeInventory(serializeInventory(inventory));
+            productRepository.save(product);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void confirmSale(Long productId, String size, Integer quantity) {
-        ProductSizeInventory inventory = inventoryRepository.findByProductIdAndSize(productId, size)
-                .orElseThrow(() -> new RuntimeException("Size " + size + " not found for product"));
-
-        inventory.confirmSale(quantity);
-        inventoryRepository.save(inventory);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        SizeInventoryData data = inventory.get(size);
+        
+        if (data == null) {
+            throw new RuntimeException("Size " + size + " not found for product");
+        }
+        
+        if (data.reserved < quantity) {
+            throw new RuntimeException("Cannot confirm sale: not enough reserved quantity");
+        }
+        
+        data.quantity -= quantity;
+        data.reserved -= quantity;
+        product.setSizeInventory(serializeInventory(inventory));
+        productRepository.save(product);
     }
 
     public void initializeInventoryForProduct(Long productId, List<String> sizes, Integer quantityPerSize) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        
         for (String size : sizes) {
-            Optional<ProductSizeInventory> existingInventory = inventoryRepository.findByProductIdAndSize(productId,
-                    size);
-            if (existingInventory.isEmpty()) {
-                ProductSizeInventory inventory = new ProductSizeInventory(product, size, quantityPerSize);
-                inventoryRepository.save(inventory);
+            if (!inventory.containsKey(size)) {
+                inventory.put(size, new SizeInventoryData(quantityPerSize, 0));
             }
         }
+        
+        product.setSizeInventory(serializeInventory(inventory));
+        productRepository.save(product);
     }
 
     public void updateInventory(Long productId, String size, Integer newQuantity) {
-        Optional<ProductSizeInventory> inventoryOpt = inventoryRepository.findByProductIdAndSize(productId, size);
-        if (inventoryOpt.isPresent()) {
-            ProductSizeInventory inventory = inventoryOpt.get();
-            inventory.setQuantity(newQuantity);
-            inventoryRepository.save(inventory);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        
+        SizeInventoryData data = inventory.get(size);
+        if (data != null) {
+            data.quantity = newQuantity;
+            data.reserved = Math.min(data.reserved, newQuantity);
         } else {
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
-            ProductSizeInventory inventory = new ProductSizeInventory(product, size, newQuantity);
-            inventoryRepository.save(inventory);
+            inventory.put(size, new SizeInventoryData(newQuantity, 0));
         }
+        
+        product.setSizeInventory(serializeInventory(inventory));
+        productRepository.save(product);
     }
 
     public boolean hasAvailableInventory(Long productId) {
-        return inventoryRepository.hasAvailableInventory(productId);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        
+        return inventory.values().stream()
+                .anyMatch(data -> data.getAvailable() > 0);
     }
 
-    private ProductSizeInventoryDTO convertToDTO(ProductSizeInventory inventory) {
-        return new ProductSizeInventoryDTO(
-                inventory.getId(),
-                inventory.getSize(),
-                inventory.getQuantity(),
-                inventory.getReservedQuantity());
+    // Helper methods for JSON parsing/serialization
+    private Map<String, SizeInventoryData> parseInventory(String json) {
+        if (json == null || json.isEmpty()) {
+            return new HashMap<>();
+        }
+        
+        try {
+            return objectMapper.readValue(json, new TypeReference<Map<String, SizeInventoryData>>() {});
+        } catch (JsonProcessingException e) {
+            System.err.println("Error parsing inventory JSON: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+
+    private String serializeInventory(Map<String, SizeInventoryData> inventory) {
+        try {
+            return objectMapper.writeValueAsString(inventory);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing inventory: " + e.getMessage());
+            return "{}";
+        }
+    }
+
+    private List<ProductSizeInventoryDTO> parseInventoryToDTO(Product product) {
+        Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        List<ProductSizeInventoryDTO> result = new ArrayList<>();
+        
+        for (Map.Entry<String, SizeInventoryData> entry : inventory.entrySet()) {
+            SizeInventoryData data = entry.getValue();
+            result.add(new ProductSizeInventoryDTO(
+                null, // No separate ID
+                entry.getKey(),
+                data.quantity,
+                data.reserved
+            ));
+        }
+        
+        // Sort by size for consistent ordering
+        result.sort((a, b) -> {
+            try {
+                return Double.compare(Double.parseDouble(a.getSize()), Double.parseDouble(b.getSize()));
+            } catch (NumberFormatException e) {
+                return a.getSize().compareTo(b.getSize());
+            }
+        });
+        
+        return result;
+    }
+    
+    // Public method to get raw inventory JSON for a product
+    public String getInventoryJson(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return product.getSizeInventory();
     }
 }

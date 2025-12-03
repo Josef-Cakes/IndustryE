@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -10,10 +10,12 @@ import Typography from '@mui/material/Typography'
 import ReviewModal from '../components/ReviewModal'
 import '../css/OrderHistoryPage.css'
 
-const OrderHistoryPage = ({ user }) => {
+const OrderHistoryPage = ({ user, addToCart, setToast }) => {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(3)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [loadingOrderDetails, setLoadingOrderDetails] = useState(false)
@@ -22,6 +24,8 @@ const OrderHistoryPage = ({ user }) => {
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [reviewProductId, setReviewProductId] = useState(null)
   const [reviewProductName, setReviewProductName] = useState('')
+  const [editingReview, setEditingReview] = useState(null)
+  const [productReviews, setProductReviews] = useState({}) // Cache for product reviews
   
   // Success Modal State
   const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -68,7 +72,21 @@ const OrderHistoryPage = ({ user }) => {
         }
       })
       
-      setSelectedOrder(response.data)
+      // Check for existing reviews for each product in the order
+      const orderData = response.data
+      if (orderData.orderItems && orderData.orderItems.length > 0) {
+        const reviewChecks = {}
+        for (const item of orderData.orderItems) {
+          const productId = item.productId || item.product?.id
+          if (productId) {
+            const review = await fetchUserReviewForProduct(productId)
+            reviewChecks[productId] = review
+          }
+        }
+        setProductReviews(reviewChecks)
+      }
+      
+      setSelectedOrder(orderData)
       setShowOrderModal(true)
     } catch (error) {
       console.error('Error fetching order details:', error)
@@ -109,9 +127,83 @@ const OrderHistoryPage = ({ user }) => {
     fetchOrderDetails(order.id)
   }
 
-  const handleReorder = (order) => {
-    // TODO: Implement reorder functionality
-    alert('Reorder functionality will be implemented soon!')
+  const handleReorder = async (order) => {
+    try {
+      if (!order.orderItems || order.orderItems.length === 0) {
+        setToast({
+          message: 'No items found in this order.',
+          type: 'error'
+        })
+        return
+      }
+
+      // Fetch product details for each item and add to cart
+      const token = localStorage.getItem('token')
+      let addedCount = 0
+      let failedItems = []
+
+      for (const orderItem of order.orderItems) {
+        try {
+          // Fetch product details from backend
+          const productResponse = await axios.get(`http://localhost:8080/api/products/${orderItem.productId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          const product = productResponse.data
+          
+          // Map product with local images
+          const { mapProductWithImages } = await import('../utils/imageMapper')
+          const productWithImages = mapProductWithImages(product)
+
+          // Create product object with selectedSize for addToCart
+          const productForCart = {
+            ...productWithImages,
+            id: product.id,
+            name: product.name || orderItem.productName,
+            price: parseFloat(orderItem.unitPrice),
+            image: productWithImages.images?.[0] || orderItem.productImage || 'https://via.placeholder.com/200',
+            selectedSize: orderItem.size // Set the size from the order
+          }
+
+          // Add to cart with the original quantity
+          if (addToCart) {
+            await addToCart(productForCart, orderItem.quantity)
+            addedCount++
+          }
+        } catch (error) {
+          console.error(`Error adding item ${orderItem.productName} to cart:`, error)
+          failedItems.push(orderItem.productName)
+        }
+      }
+
+      // Show success/error message and navigate to cart
+      if (addedCount > 0 && failedItems.length === 0) {
+        setToast({
+          message: `Successfully added ${addedCount} item(s) to your cart!`,
+          type: 'success'
+        })
+        navigate('/cart')
+      } else if (addedCount > 0 && failedItems.length > 0) {
+        setToast({
+          message: `Added ${addedCount} item(s) to cart. Failed to add: ${failedItems.join(', ')}`,
+          type: 'warning'
+        })
+        navigate('/cart')
+      } else {
+        setToast({
+          message: 'Failed to add items to cart. Please try again.',
+          type: 'error'
+        })
+      }
+    } catch (error) {
+      console.error('Error reordering:', error)
+      setToast({
+        message: 'Failed to reorder items. Please try again.',
+        type: 'error'
+      })
+    }
   }
 
   const handleMarkAsReceived = async (orderId) => {
@@ -162,7 +254,26 @@ const OrderHistoryPage = ({ user }) => {
     }
   }
 
-  const handleWriteReview = (item) => {
+  const fetchUserReviewForProduct = async (productId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get(`http://localhost:8080/api/reviews/user/product/${productId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      return response.data
+    } catch (error) {
+      // 404 means no review exists, which is fine
+      if (error.response?.status === 404) {
+        return null
+      }
+      console.error('Error fetching user review:', error)
+      return null
+    }
+  }
+
+  const handleWriteReview = async (item) => {
     // Use productId if available, fallback to parsing from item or checking structure
     const productId = item.productId || item.product?.id
     
@@ -171,9 +282,23 @@ const OrderHistoryPage = ({ user }) => {
       return
     }
     
+    // Check if user already has a review for this product
+    const existingReview = await fetchUserReviewForProduct(productId)
+    
     setReviewProductId(productId)
     setReviewProductName(item.productName || item.product?.name || 'Product')
+    setEditingReview(existingReview)
     setShowReviewModal(true)
+  }
+
+  // Check if user has reviewed a product (for button display)
+  const checkProductReview = async (productId) => {
+    if (productReviews[productId] !== undefined) {
+      return productReviews[productId]
+    }
+    const review = await fetchUserReviewForProduct(productId)
+    setProductReviews(prev => ({ ...prev, [productId]: review }))
+    return review
   }
 
   if (loading) {
@@ -234,8 +359,9 @@ const OrderHistoryPage = ({ user }) => {
             </Link>
           </div>
         ) : (
-          <div className="orders-grid">
-            {orders.map((order, index) => (
+          <>
+            <div className="orders-grid">
+              {orders.slice(0, visibleCount).map((order, index) => (
               <div key={order.id} className="order-card" style={{ animationDelay: `${index * 0.1}s` }}>
                 <div className="order-header">
                   <h3 className="order-number">Order #{order.orderNumber || order.id}</h3>
@@ -311,7 +437,7 @@ const OrderHistoryPage = ({ user }) => {
                   >
                     {loadingOrderDetails ? 'Loading...' : 'View Details'}
                   </button>
-                  {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                  {order.status === 'DELIVERED' && (
                     <button 
                       className="action-btn mark-received-btn"
                       onClick={() => handleMarkAsReceived(order.id)}
@@ -330,7 +456,20 @@ const OrderHistoryPage = ({ user }) => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+            
+            {/* Load More Button */}
+            {orders.length > visibleCount && (
+              <div className="load-more-container">
+                <button 
+                  className="load-more-btn"
+                  onClick={() => setVisibleCount(prev => Math.min(prev + 3, orders.length))}
+                >
+                  Load More Orders
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -387,11 +526,14 @@ const OrderHistoryPage = ({ user }) => {
                           {(selectedOrder.status === 'COMPLETED' || selectedOrder.status === 'DELIVERED') && (
                             <div style={{ marginLeft: '1rem' }}>
                               <button 
-                                className="action-btn"
-                                style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                className="review-action-btn"
                                 onClick={() => handleWriteReview(item)}
                               >
-                                ★ Write Review
+                                {productReviews[item.productId || item.product?.id] ? (
+                                  <>✎ Edit Review</>
+                                ) : (
+                                  <>★ Write Review</>
+                                )}
                               </button>
                             </div>
                           )}
@@ -436,11 +578,27 @@ const OrderHistoryPage = ({ user }) => {
       {showReviewModal && (
         <ReviewModal
           open={showReviewModal}
-          onClose={() => setShowReviewModal(false)}
+          onClose={() => {
+            setShowReviewModal(false)
+            setEditingReview(null)
+          }}
           productId={reviewProductId}
           productName={reviewProductName}
-          onReviewSubmitted={() => {
+          editMode={!!editingReview}
+          existingReview={editingReview}
+          onReviewSubmitted={async () => {
             setShowReviewModal(false)
+            setEditingReview(null)
+            
+            // Refresh the review for the product that was just reviewed
+            if (reviewProductId) {
+              const updatedReview = await fetchUserReviewForProduct(reviewProductId)
+              setProductReviews(prev => ({
+                ...prev,
+                [reviewProductId]: updatedReview
+              }))
+            }
+            
             setShowSuccessModal(true)
           }}
         />

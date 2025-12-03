@@ -105,7 +105,6 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
       <div className="cart-container">
         <div className="cart-header">
           <h2>Shopping Cart</h2>
-          <p className="cart-count">{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
         </div>
         
         <div className="cart-items">

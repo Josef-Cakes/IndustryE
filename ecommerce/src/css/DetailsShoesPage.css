@@ -627,6 +627,51 @@
   border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
+/* Review Actions Header */
+.review-actions-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Your Review Badge */
+.your-review-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.2) 0%, rgba(249, 76, 16, 0.2) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.4);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Edit Review Button */
+.edit-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: var(--text-gray);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-review-btn:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+  transform: translateY(-1px);
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;

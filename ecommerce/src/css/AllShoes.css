@@ -6,21 +6,21 @@
 /* Header Section */
 .shoes-header {
   background: linear-gradient(135deg, var(--primary-bg) 0%, rgba(45, 45, 45, 0.9) 100%);
-  padding: 60px 0 40px 0;
+  padding: 30px 0 20px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 16px;
 }
 
 .page-title h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--text-white);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .results-count {
@@ -38,12 +38,13 @@
 .category-btn {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-gray);
-  padding: 12px 24px;
+  padding: 8px 18px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 25px;
   transition: all 0.3s ease;
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .category-btn:hover {
@@ -75,7 +76,7 @@
 }
 
 .products-section {
-  padding: 100px 0;
+  padding: 40px 0 80px 0;
   background: var(--secondary-bg);
   width: 100%;
 }
@@ -92,7 +93,7 @@
 }
 
 .products-section {
-  padding: 80px 0;
+  padding: 40px 0 80px 0;
   background: var(--secondary-bg);
   width: 100%;
 }

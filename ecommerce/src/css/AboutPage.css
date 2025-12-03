@@ -1,6 +1,9 @@
 .about-page {
   padding: 0;
   margin: 0;
+  background: var(--primary-bg);
+  color: var(--text-white);
+  min-height: 100vh;
 }
 
 .container {
@@ -11,20 +14,29 @@
 
 /* Hero Section */
 .about-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, rgba(45, 45, 45, 0.9) 100%);
+  color: var(--text-white);
   padding: 80px 0;
   text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .about-hero h1 {
   font-size: 3.5rem;
   margin-bottom: 20px;
   font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .highlight {
-  color: #ffd43b;
+  color: var(--accent-orange);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero-subtitle {
@@ -32,13 +44,13 @@
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
-  opacity: 0.9;
+  color: var(--text-gray);
 }
 
 /* Story Section */
 .story-section {
   padding: 80px 0;
-  background: white;
+  background: var(--secondary-bg);
 }
 
 .story-content {
@@ -51,14 +63,14 @@
 .story-text h2 {
   font-size: 2.5rem;
   margin-bottom: 30px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .story-text p {
   font-size: 1.1rem;
   line-height: 1.8;
   margin-bottom: 20px;
-  color: #4a5568;
+  color: var(--text-gray);
 }
 
 .story-image {
@@ -67,30 +79,30 @@
 }
 
 .image-placeholder {
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 40px;
   text-align: center;
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
 }
 
 .image-placeholder p {
   margin-top: 20px;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-gray);
 }
 
 /* Stats Section */
 .stats-section {
   padding: 80px 0;
-  background: #f7fafc;
+  background: var(--primary-bg);
 }
 
 .stats-section h2 {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 50px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .stats-grid {
@@ -99,43 +111,50 @@
   gap: 30px;
 }
 
-.stat-card {
-  background: white;
-  padding: 40px 20px;
+.about-page .stat-card {
+  background: #1a1a1a !important;
+  padding: 40px 20px !important;
   text-align: center;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
 }
 
-.stat-card:hover {
+.about-page .stat-card:hover {
   transform: translateY(-5px);
+  border-color: var(--accent-orange) !important;
+  background: #2d2d2d !important;
 }
 
-.stat-number {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #667eea;
+.about-page .stat-number {
+  font-size: 3rem !important;
+  font-weight: 700 !important;
+  background: var(--gradient-primary) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
   margin-bottom: 10px;
+  color: var(--accent-orange) !important;
 }
 
-.stat-label {
-  font-size: 1.1rem;
-  color: #4a5568;
-  font-weight: 500;
+.about-page .stat-label {
+  font-size: 1.1rem !important;
+  color: var(--text-gray) !important;
+  font-weight: 500 !important;
 }
 
 /* Values Section */
 .values-section {
   padding: 80px 0;
-  background: white;
+  background: var(--secondary-bg);
 }
 
 .values-section h2 {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 50px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .values-grid {
@@ -148,12 +167,15 @@
   text-align: center;
   padding: 40px 20px;
   border-radius: 15px;
-  transition: transform 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
 .value-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-orange);
+  box-shadow: 0 15px 40px rgba(255, 107, 53, 0.2);
 }
 
 .value-icon {
@@ -164,25 +186,25 @@
 .value-card h3 {
   font-size: 1.5rem;
   margin-bottom: 15px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .value-card p {
-  color: #4a5568;
+  color: var(--text-gray);
   line-height: 1.6;
 }
 
 /* Team Section */
 .team-section {
   padding: 80px 0;
-  background: #f7fafc;
+  background: var(--primary-bg);
 }
 
 .team-section h2 {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 50px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .team-grid {
@@ -192,39 +214,56 @@
 }
 
 .team-card {
-  background: white;
+  background: var(--secondary-bg);
   padding: 40px 20px;
   text-align: center;
   border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
 .team-card:hover {
   transform: translateY(-5px);
+  border-color: var(--accent-orange);
 }
 
 .team-avatar {
   font-size: 4rem;
   margin-bottom: 20px;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(255, 107, 53, 0.3);
+  transition: border-color 0.3s ease;
+}
+
+.team-card:hover .team-avatar {
+  border-color: var(--accent-orange);
 }
 
 .team-card h3 {
   font-size: 1.3rem;
   margin-bottom: 10px;
-  color: #2d3748;
+  color: var(--text-white);
 }
 
 .team-card p {
-  color: #667eea;
+  color: var(--accent-orange);
   font-weight: 500;
 }
 
 /* Mission Section */
 .mission-section {
   padding: 80px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, rgba(45, 45, 45, 0.9) 100%);
+  color: var(--text-white);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mission-content {
@@ -234,6 +273,10 @@
 .mission-section h2 {
   font-size: 2.5rem;
   margin-bottom: 30px;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .mission-content > p {
@@ -241,7 +284,7 @@
   max-width: 800px;
   margin: 0 auto 40px;
   line-height: 1.8;
-  opacity: 0.9;
+  color: var(--text-gray);
 }
 
 .mission-points {
@@ -257,6 +300,16 @@
   align-items: center;
   gap: 10px;
   font-size: 1.1rem;
+  color: var(--text-white);
+  padding: 15px 25px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.point:hover {
+  border-color: var(--accent-orange);
 }
 
 .point-icon {

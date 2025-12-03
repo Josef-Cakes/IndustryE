@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import '../css/CheckoutPage.css'
 
-const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuantity }) => {
+const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuantity, removeFromCart }) => {
   const navigate = useNavigate()
   const [step, setStep] = useState(1) // 1: Shipping, 2: Payment, 3: Review
   const [shippingInfo, setShippingInfo] = useState({
@@ -18,6 +18,7 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuan
   })
   const [paymentMethod, setPaymentMethod] = useState('cod')
   const [isLoading, setIsLoading] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(null) // { item, onConfirm }
 
   // Redirect to login if not authenticated
   React.useEffect(() => {
@@ -25,6 +26,13 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuan
       navigate('/login')
     }
   }, [isAuthenticated, navigate])
+
+  // Redirect to cart if cart becomes empty
+  React.useEffect(() => {
+    if (cart && cart.length === 0) {
+      navigate('/cart')
+    }
+  }, [cart, navigate])
 
   const paymentMethods = [
     { id: 'cod', name: 'Cash on Delivery', description: 'Pay when your order arrives' },
@@ -287,10 +295,20 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuan
                             }}
                             onClick={async () => {
                               if (item.quantity > 1 && updateQuantity) {
+                                // Decrease quantity normally
                                 await updateQuantity(item.id, item.quantity - 1, item.size)
+                              } else if (item.quantity === 1 && removeFromCart) {
+                                // Show Toast-style confirmation
+                                setConfirmRemove({
+                                  itemName: item.name,
+                                  itemSize: item.size,
+                                  onConfirm: async () => {
+                                    await removeFromCart(item.id, item.size)
+                                    setConfirmRemove(null)
+                                  }
+                                })
                               }
                             }}
-                            disabled={item.quantity <= 1}
                             aria-label="Decrease quantity"
                           >-</button>
                           <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{item.quantity}</span>
@@ -391,6 +409,37 @@ const CheckoutPage = ({ cart, user, onOrderComplete, isAuthenticated, updateQuan
           </div>
         </div>
       </div>
+
+      {/* Toast-style Confirmation Dialog */}
+      {confirmRemove && (
+        <div className="confirm-toast-overlay" onClick={() => setConfirmRemove(null)}>
+          <div className="confirm-toast" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-toast-content">
+              <span className="confirm-toast-icon">⚠️</span>
+              <div className="confirm-toast-message-container">
+                <span className="confirm-toast-message">Remove item from cart?</span>
+                <span className="confirm-toast-item">
+                  "{confirmRemove.itemName}" {confirmRemove.itemSize && `(Size: ${confirmRemove.itemSize})`}
+                </span>
+              </div>
+            </div>
+            <div className="confirm-toast-actions">
+              <button 
+                className="confirm-toast-btn cancel-btn"
+                onClick={() => setConfirmRemove(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-toast-btn confirm-btn"
+                onClick={confirmRemove.onConfirm}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
