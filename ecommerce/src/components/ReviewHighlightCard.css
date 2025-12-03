@@ -1,0 +1,105 @@
+/* ReviewHighlightCard.css */
+
+.review-highlight-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.review-highlight-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 107, 53, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.review-highlight-card:focus {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
+
+/* Quote icon in corner */
+.quote-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: rgba(255, 107, 53, 0.3);
+  font-size: 1.5rem;
+  transform: rotate(180deg);
+}
+
+.quote-icon svg {
+  font-size: 2rem;
+}
+
+/* Star rating */
+.highlight-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.highlight-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.highlight-star {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.2);
+  transition: color 0.2s ease;
+}
+
+.highlight-star.filled {
+  color: #ffc107;
+}
+
+.highlight-rating-text {
+  font-size: 0.85rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+/* Review excerpt */
+.highlight-excerpt {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-style: italic;
+  margin: 0 0 1rem 0;
+  padding-right: 1.5rem;
+}
+
+/* Link to reviews */
+.highlight-link {
+  display: inline-block;
+  color: var(--accent-orange);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.review-highlight-card:hover .highlight-link {
+  color: #ff8c5a;
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .review-highlight-card {
+    margin-top: 1rem;
+    padding: 1rem;
+  }
+
+  .highlight-excerpt {
+    font-size: 0.85rem;
+  }
+}
+

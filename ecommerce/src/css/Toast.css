@@ -20,6 +20,37 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
+}
+
+.toast-clickable .toast-content {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.toast-clickable .toast-content:hover {
+  opacity: 0.85;
+}
+
+.toast-action {
+  color: var(--accent-orange);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-left: 8px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.2s ease;
+}
+
+.toast-action-icon {
+  font-size: 16px !important;
+  vertical-align: middle;
+}
+
+.toast-clickable .toast-content:hover .toast-action {
+  transform: translateX(2px);
 }
 
 .toast-icon {
@@ -57,6 +88,10 @@
 
 .toast-error {
   border-left-color: #ff6b6b;
+}
+
+.toast-warning {
+  border-left-color: #fbbf24;
 }
 
 @keyframes slideIn {

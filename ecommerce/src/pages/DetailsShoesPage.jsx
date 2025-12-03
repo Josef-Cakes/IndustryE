@@ -16,8 +16,11 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut'
 import RotateLeftIcon from '@mui/icons-material/RotateLeft'
 import RotateRightIcon from '@mui/icons-material/RotateRight'
 import CircularProgress from '@mui/material/CircularProgress'
+import EditIcon from '@mui/icons-material/Edit'
+import ReviewHighlightCard from '../components/ReviewHighlightCard'
+import ReviewModal from '../components/ReviewModal'
 
-const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
+const DetailsShoesPage = ({ addToCart, isAuthenticated, user }) => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [shoe, setShoe] = useState(null)
@@ -34,6 +37,10 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [reviews, setReviews] = useState([])
+  
+  // Review edit state
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [editingReview, setEditingReview] = useState(null)
 
   const autoSlideRef = useRef()
 
@@ -180,6 +187,19 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
     return getSizeAvailability(size) > 0
   }
 
+  // Handle edit review
+  const handleEditReview = (review) => {
+    setEditingReview(review)
+    setShowReviewModal(true)
+  }
+
+  // Handle review update completed
+  const handleReviewUpdated = () => {
+    setShowReviewModal(false)
+    setEditingReview(null)
+    fetchReviews() // Refresh reviews list
+  }
+
   // Reset zoom and rotation when modal closes
   useEffect(() => {
     if (!modalOpen) {
@@ -290,6 +310,9 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
                 </button>
               ))}
             </div>
+
+            {/* Review Highlight Card */}
+            <ReviewHighlightCard reviews={reviews} rating={shoe.rating} />
           </div>
 
           {/* Modal for zoomable and rotatable image */}
@@ -530,17 +553,34 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
                 <div key={review.id} className="review-card">
                   <div className="review-header">
                     <div className="review-author">
-                      <span className="author-name">{review.userName || 'Anonymous'}</span>
+                      <span className="author-name">
+                        {review.userName || 'Anonymous'}
+                        {user && review.userId === user.id && (
+                          <span className="your-review-badge">Your Review</span>
+                        )}
+                      </span>
                       <span className="review-date">
                         {new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                       </span>
                     </div>
-                    <div className="review-rating">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i}>
-                          {i < review.rating ? '★' : '☆'}
-                        </span>
-                      ))}
+                    <div className="review-actions-header">
+                      <div className="review-rating">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i}>
+                            {i < review.rating ? '★' : '☆'}
+                          </span>
+                        ))}
+                      </div>
+                      {user && review.userId === user.id && (
+                        <button 
+                          className="edit-review-btn"
+                          onClick={() => handleEditReview(review)}
+                          title="Edit your review"
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                          Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                   <p className="review-content">"{review.comment}"</p>
@@ -562,6 +602,22 @@ const DetailsShoesPage = ({ addToCart, isAuthenticated }) => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Review Edit Modal */}
+        {showReviewModal && (
+          <ReviewModal
+            open={showReviewModal}
+            onClose={() => {
+              setShowReviewModal(false)
+              setEditingReview(null)
+            }}
+            productId={parseInt(id)}
+            productName={shoe?.name || 'Product'}
+            editMode={!!editingReview}
+            existingReview={editingReview}
+            onReviewSubmitted={handleReviewUpdated}
+          />
+        )}
       </div>
     </div>
   )

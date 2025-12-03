@@ -1,4 +1,4 @@
- package com.industryE.ecommerce.service;
+package com.industryE.ecommerce.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.industryE.ecommerce.dto.ProductDTO;
 import com.industryE.ecommerce.entity.Product;
 import com.industryE.ecommerce.repository.ProductRepository;
-import com.industryE.ecommerce.repository.ProductSizeInventoryRepository;
 
 @Service
 public class ProductService {
@@ -20,9 +19,6 @@ public class ProductService {
     
     @Autowired
     private ProductSizeInventoryService sizeInventoryService;
-    
-    @Autowired
-    private ProductSizeInventoryRepository sizeInventoryRepository;
 
     public List<ProductDTO> getAllProducts() {
         return productRepository.findAll().stream()
@@ -91,10 +87,7 @@ public class ProductService {
             throw new RuntimeException("Product not found with id: " + id);
         }
         
-        // First delete all related size inventory records
-        sizeInventoryRepository.deleteByProductId(id);
-        
-        // Then delete the product
+        // Size inventory is now embedded in the product, so just delete the product
         productRepository.deleteById(id);
     }
 

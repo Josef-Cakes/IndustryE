@@ -1,7 +1,10 @@
-import React from "react"
+import React, { useState } from "react"
+import '../css/CartPage.css'
 
 const CartItem = ({ item, isLoading, onUpdateQuantity, onRemove }) => {
+  const [confirmRemove, setConfirmRemove] = useState(null)
   const itemKey = `${item.id}-${item.size || 'no-size'}`
+  
   return (
     <div key={itemKey} className={`cart-item ${isLoading ? 'loading' : ''}`}>
       <div className="item-image">
@@ -15,9 +18,22 @@ const CartItem = ({ item, isLoading, onUpdateQuantity, onRemove }) => {
       </div>
       <div className="item-quantity">
         <button 
-          onClick={() => onUpdateQuantity(item.id, item.quantity - 1, item.size)}
+          onClick={() => {
+            if (item.quantity > 1 && onUpdateQuantity) {
+              onUpdateQuantity(item.id, item.quantity - 1, item.size)
+            } else if (item.quantity === 1 && onRemove) {
+              setConfirmRemove({
+                itemName: item.name,
+                itemSize: item.size,
+                onConfirm: () => {
+                  onRemove(item.id, item.size)
+                  setConfirmRemove(null)
+                }
+              })
+            }
+          }}
           className="quantity-btn"
-          disabled={item.quantity <= 1 || isLoading}
+          disabled={isLoading}
         >
           -
         </button>
@@ -41,6 +57,37 @@ const CartItem = ({ item, isLoading, onUpdateQuantity, onRemove }) => {
       >
         {isLoading ? '⟳' : '×'}
       </button>
+
+      {/* Toast-style Confirmation Dialog */}
+      {confirmRemove && (
+        <div className="confirm-toast-overlay" onClick={() => setConfirmRemove(null)}>
+          <div className="confirm-toast" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-toast-content">
+              <span className="confirm-toast-icon">⚠️</span>
+              <div className="confirm-toast-message-container">
+                <span className="confirm-toast-message">Remove item from cart?</span>
+                <span className="confirm-toast-item">
+                  "{confirmRemove.itemName}" {confirmRemove.itemSize && `(Size: ${confirmRemove.itemSize})`}
+                </span>
+              </div>
+            </div>
+            <div className="confirm-toast-actions">
+              <button 
+                className="confirm-toast-btn cancel-btn"
+                onClick={() => setConfirmRemove(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-toast-btn confirm-btn"
+                onClick={confirmRemove.onConfirm}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

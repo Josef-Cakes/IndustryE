@@ -274,3 +274,121 @@
     font-size: 2rem;
   }
 }
+
+/* Toast-style Confirmation Dialog */
+.confirm-toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.confirm-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  min-width: 350px;
+  max-width: 450px;
+  padding: 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(39, 39, 39, 0.95) 0%, rgba(25, 25, 25, 0.95) 100%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease forwards;
+  border-left: 4px solid #fbbf24;
+  backdrop-filter: blur(10px);
+  z-index: 10001;
+}
+
+.confirm-toast-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.confirm-toast-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.confirm-toast-message-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.confirm-toast-message {
+  color: var(--text-white);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.confirm-toast-item {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.confirm-toast-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirm-toast-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.confirm-toast-btn.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-gray);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.confirm-toast-btn.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-white);
+}
+
+.confirm-toast-btn.confirm-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+}
+
+.confirm-toast-btn.confirm-btn:hover {
+  background: linear-gradient(135deg, #ee5a6f 0%, #dc4a5f 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .confirm-toast {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    min-width: auto;
+    width: calc(100% - 40px);
+  }
+}

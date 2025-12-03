@@ -83,22 +83,13 @@ const SignUpPage = ({ setToast }) => {
       const data = await response.json()
       
       if (response.ok) {
-        // Clear form data
-        setFormData({
-          name: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        })
         // Show success toast
         setToast({
           message: 'Account created successfully! Please log in with your credentials.',
           type: 'success'
         })
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          navigate('/login')
-        }, 2000)
+        // Redirect to login page immediately
+        navigate('/login')
       } else {
         setErrors({ general: data.message || 'Registration failed. Please try again.' })
       }

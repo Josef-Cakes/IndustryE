@@ -12,14 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.industryE.ecommerce.dto.AdminStatsResponse;
 import com.industryE.ecommerce.dto.OrderResponse;
 import com.industryE.ecommerce.dto.ProductDTO;
+import com.industryE.ecommerce.dto.ProductSizeInventoryDTO;
 import com.industryE.ecommerce.dto.UserResponse;
 import com.industryE.ecommerce.entity.Order;
 import com.industryE.ecommerce.entity.Product;
-import com.industryE.ecommerce.entity.ProductSizeInventory;
 import com.industryE.ecommerce.entity.User;
 import com.industryE.ecommerce.repository.OrderRepository;
 import com.industryE.ecommerce.repository.ProductRepository;
-import com.industryE.ecommerce.repository.ProductSizeInventoryRepository;
 import com.industryE.ecommerce.repository.UserRepository;
 
 @Service
@@ -34,9 +33,6 @@ public class AdminService {
     
     @Autowired
     private OrderRepository orderRepository;
-    
-    @Autowired
-    private ProductSizeInventoryRepository sizeInventoryRepository;
     
     @Autowired
     private ProductService productService;
@@ -139,7 +135,7 @@ public class AdminService {
     }
 
     private boolean isLowStock(Product product) {
-        List<ProductSizeInventory> inventories = sizeInventoryRepository.findByProductId(product.getId());
+        List<ProductSizeInventoryDTO> inventories = sizeInventoryService.getSizeInventoryByProductId(product.getId());
         return inventories.stream()
             .anyMatch(inv -> inv.getAvailableQuantity() <= 5); // Consider low stock if any size has <= 5 items
     }
@@ -253,25 +249,13 @@ public class AdminService {
 
     // Inventory Management
     public void updateInventory(Long productId, String size, Integer quantity) {
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
-        
-        Optional<ProductSizeInventory> inventoryOpt = sizeInventoryRepository.findByProductIdAndSize(productId, size);
-        
-        if (inventoryOpt.isPresent()) {
-            ProductSizeInventory inventory = inventoryOpt.get();
-            inventory.setQuantity(quantity);
-            inventory.setReservedQuantity(Math.min(inventory.getReservedQuantity(), quantity));
-            sizeInventoryRepository.save(inventory);
-        } else {
-            // Create new inventory entry
-            ProductSizeInventory newInventory = new ProductSizeInventory();
-            newInventory.setProduct(product);
-            newInventory.setSize(size);
-            newInventory.setQuantity(quantity);
-            newInventory.setReservedQuantity(0);
-            sizeInventoryRepository.save(newInventory);
+        // Verify product exists
+        if (!productRepository.existsById(productId)) {
+            throw new RuntimeException("Product not found with id: " + productId);
         }
+        
+        // Use the service to update inventory (now embedded in Product)
+        sizeInventoryService.updateInventory(productId, size, quantity);
     }
 
     // Helper methods

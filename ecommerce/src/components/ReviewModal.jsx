@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -10,11 +10,30 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import axios from 'axios'
 
-const ReviewModal = ({ open, onClose, productId, productName, onReviewSubmitted }) => {
+const ReviewModal = ({ 
+  open, 
+  onClose, 
+  productId, 
+  productName, 
+  onReviewSubmitted,
+  editMode = false,
+  existingReview = null
+}) => {
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editMode && existingReview) {
+      setRating(existingReview.rating || 5)
+      setComment(existingReview.comment || '')
+    } else {
+      setRating(5)
+      setComment('')
+    }
+  }, [editMode, existingReview, open])
 
   const handleSubmit = async () => {
     if (!comment.trim()) {
@@ -27,15 +46,39 @@ const ReviewModal = ({ open, onClose, productId, productName, onReviewSubmitted 
 
     try {
       const token = localStorage.getItem('token')
-      await axios.post('http://localhost:8080/api/reviews', {
-        productId,
-        rating,
-        comment
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      
+      console.log('Edit mode:', editMode)
+      console.log('Existing review:', existingReview)
+      console.log('Review ID:', existingReview?.id)
+      console.log('Token exists:', !!token)
+      
+      if (!token) {
+        setError('Please log in to submit a review')
+        return
+      }
+      
+      if (editMode && existingReview?.id) {
+        // Update existing review
+        await axios.put(`http://localhost:8080/api/reviews/${existingReview.id}`, {
+          rating,
+          comment
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      } else {
+        // Create new review
+        await axios.post('http://localhost:8080/api/reviews', {
+          productId,
+          rating,
+          comment
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      }
 
       // Reset form
       setRating(5)
@@ -47,7 +90,13 @@ const ReviewModal = ({ open, onClose, productId, productName, onReviewSubmitted 
       }
     } catch (err) {
       console.error('Error submitting review:', err)
-      setError('Failed to submit review. Please try again.')
+      console.error('Response:', err.response?.data)
+      const serverMessage = err.response?.data?.message || err.response?.data || ''
+      if (serverMessage && typeof serverMessage === 'string') {
+        setError(serverMessage)
+      } else {
+        setError(editMode ? 'Failed to update review. Please try again.' : 'Failed to submit review. Please try again.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -78,7 +127,7 @@ const ReviewModal = ({ open, onClose, productId, productName, onReviewSubmitted 
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
       }}>
-        Write a Review for {productName}
+        {editMode ? 'Edit Your Review' : `Write a Review for ${productName}`}
       </DialogTitle>
       <DialogContent sx={{ pt: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -192,7 +241,7 @@ const ReviewModal = ({ open, onClose, productId, productName, onReviewSubmitted 
             },
           }}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+          {isSubmitting ? (editMode ? 'Updating...' : 'Submitting...') : (editMode ? 'Update Review' : 'Submit Review')}
         </Button>
       </DialogActions>
     </Dialog>

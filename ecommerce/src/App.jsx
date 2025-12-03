@@ -197,7 +197,8 @@ function AppContent() {
         // Show success toast
         setToast({
           message: `${quantity} ${product.name} (Size ${productSize}) added to cart!`,
-          type: 'success'
+          type: 'success',
+          navigateTo: '/cart'
         })
       } catch (error) {
         console.error('Error syncing cart with backend:', error)
@@ -217,7 +218,8 @@ function AppContent() {
       localStorage.setItem('cart', JSON.stringify(updatedCart))
       setToast({
         message: `${quantity} ${product.name} (Size ${productSize}) added to cart! Please log in to save your cart.`,
-        type: 'success'
+        type: 'success',
+        navigateTo: '/cart'
       })
     }
   }
@@ -400,7 +402,7 @@ function AppContent() {
           } />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/shoes" element={<Shoes addToCart={addToCart} isAuthenticated={isAuthenticated} user={user} />} />
-          <Route path="/shoes/:id" element={<DetailsShoesPage addToCart={addToCart} isAuthenticated={isAuthenticated} />} />
+          <Route path="/shoes/:id" element={<DetailsShoesPage addToCart={addToCart} isAuthenticated={isAuthenticated} user={user} />} />
           <Route path="/search" element={<SearchPage addToCart={addToCart} isAuthenticated={isAuthenticated} />} />
           
           {/* Protected Routes */}
@@ -423,10 +425,11 @@ function AppContent() {
               onOrderComplete={handleOrderComplete}
               isAuthenticated={isAuthenticated}
               updateQuantity={updateQuantity}
+              removeFromCart={removeFromCart}
             />
           } />
           <Route path="/orders" element={
-            isAuthenticated ? <OrderHistoryPage user={user} /> : <Navigate to="/login" />
+            isAuthenticated ? <OrderHistoryPage user={user} addToCart={addToCart} setToast={setToast} /> : <Navigate to="/login" />
           } />
           <Route path="/order-confirmation" element={
             <OrderConfirmationPage orderDetails={orderDetails} />
@@ -444,7 +447,8 @@ function AppContent() {
         <Toast 
           message={toast.message} 
           type={toast.type} 
-          onClose={closeToast} 
+          onClose={closeToast}
+          navigateTo={toast.navigateTo}
         />
       )}
     </div>
