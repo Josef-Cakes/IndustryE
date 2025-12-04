@@ -21,7 +21,6 @@ import com.industryE.ecommerce.security.JwtTokenProvider;
 import com.industryE.ecommerce.service.OrderService;
 import com.industryE.ecommerce.service.UserService;
 
-import jakarta.persistence.criteria.Order;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -126,17 +125,6 @@ public class OrderController {
                     .body(new ErrorResponse(e.getMessage()));
         }
     }
-
-    @PostMapping("/orders/{orderId}/mark-received")
-    public ResponseEntity<?> markAsReceived(@PathVariable Long orderId) {
-        try {
-            Order order = (Order) orderService.markAsReceived(orderId);
-            return ResponseEntity.ok(order);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     
     private String extractTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");

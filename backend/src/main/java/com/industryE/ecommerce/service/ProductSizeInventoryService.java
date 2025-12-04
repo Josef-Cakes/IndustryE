@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,8 +29,8 @@ public class ProductSizeInventoryService {
 
     // Inner class to represent size inventory data
     public static class SizeInventoryData {
-        public Integer quantity = 0;
-        public Integer reserved = 0;
+        private Integer quantity = 0;
+        private Integer reserved = 0;
         
         public SizeInventoryData() {}
         
@@ -38,6 +39,24 @@ public class ProductSizeInventoryService {
             this.reserved = reserved;
         }
         
+        // Getters and setters for Jackson serialization
+        public Integer getQuantity() {
+            return quantity;
+        }
+        
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
+        
+        public Integer getReserved() {
+            return reserved;
+        }
+        
+        public void setReserved(Integer reserved) {
+            this.reserved = reserved;
+        }
+        
+        @JsonIgnore
         public Integer getAvailable() {
             return quantity - reserved;
         }
@@ -64,8 +83,8 @@ public class ProductSizeInventoryService {
         return new ProductSizeInventoryDTO(
             null, // No separate ID since it's embedded
             size,
-            data.quantity,
-            data.reserved
+            data.getQuantity(),
+            data.getReserved()
         );
     }
 
@@ -84,13 +103,23 @@ public class ProductSizeInventoryService {
     }
 
     public void reserveInventory(Long productId, String size, Integer quantity) {
+        System.out.println("reserveInventory called: productId=" + productId + ", size=" + size + ", qty=" + quantity);
+        
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         
+        System.out.println("Current inventory JSON: " + product.getSizeInventory());
+        
         Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
+        
+        if (inventory.isEmpty()) {
+            System.err.println("WARNING: Parsed inventory is empty! Original JSON: " + product.getSizeInventory());
+        }
+        
         SizeInventoryData data = inventory.get(size);
         
         if (data == null) {
+            System.err.println("Size " + size + " not found. Available sizes: " + inventory.keySet());
             throw new RuntimeException("Size " + size + " not found for product");
         }
         
@@ -98,9 +127,13 @@ public class ProductSizeInventoryService {
             throw new RuntimeException("Insufficient inventory for size " + size + ". Available: " + data.getAvailable());
         }
         
-        data.reserved += quantity;
-        product.setSizeInventory(serializeInventory(inventory));
+        data.setReserved(data.getReserved() + quantity);
+        String serialized = serializeInventory(inventory);
+        System.out.println("Serialized inventory: " + serialized);
+        
+        product.setSizeInventory(serialized);
         productRepository.save(product);
+        System.out.println("Inventory reserved successfully");
     }
 
     public void releaseReservedInventory(Long productId, String size, Integer quantity) {
@@ -111,7 +144,7 @@ public class ProductSizeInventoryService {
         SizeInventoryData data = inventory.get(size);
         
         if (data != null) {
-            data.reserved = Math.max(0, data.reserved - quantity);
+            data.setReserved(Math.max(0, data.getReserved() - quantity));
             product.setSizeInventory(serializeInventory(inventory));
             productRepository.save(product);
         }
@@ -129,19 +162,21 @@ public class ProductSizeInventoryService {
             throw new RuntimeException("Size " + size + " not found for product");
         }
         
-        if (data.reserved < quantity) {
+        if (data.getReserved() < quantity) {
             throw new RuntimeException("Cannot confirm sale: not enough reserved quantity");
         }
         
-        data.quantity -= quantity;
-        data.reserved -= quantity;
+        data.setQuantity(data.getQuantity() - quantity);
+        data.setReserved(data.getReserved() - quantity);
         product.setSizeInventory(serializeInventory(inventory));
         productRepository.save(product);
     }
 
     public void initializeInventoryForProduct(Long productId, List<String> sizes, Integer quantityPerSize) {
+        System.out.println("Initializing inventory for product ID: " + productId + " with " + quantityPerSize + " per size");
+        
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
         
         Map<String, SizeInventoryData> inventory = parseInventory(product.getSizeInventory());
         
@@ -151,8 +186,12 @@ public class ProductSizeInventoryService {
             }
         }
         
-        product.setSizeInventory(serializeInventory(inventory));
-        productRepository.save(product);
+        String serialized = serializeInventory(inventory);
+        System.out.println("Serialized inventory for product " + productId + ": " + serialized);
+        
+        product.setSizeInventory(serialized);
+        Product saved = productRepository.save(product);
+        System.out.println("Saved product " + saved.getId() + " with inventory: " + saved.getSizeInventory());
     }
 
     public void updateInventory(Long productId, String size, Integer newQuantity) {
@@ -163,8 +202,8 @@ public class ProductSizeInventoryService {
         
         SizeInventoryData data = inventory.get(size);
         if (data != null) {
-            data.quantity = newQuantity;
-            data.reserved = Math.min(data.reserved, newQuantity);
+            data.setQuantity(newQuantity);
+            data.setReserved(Math.min(data.getReserved(), newQuantity));
         } else {
             inventory.put(size, new SizeInventoryData(newQuantity, 0));
         }
@@ -186,13 +225,19 @@ public class ProductSizeInventoryService {
     // Helper methods for JSON parsing/serialization
     private Map<String, SizeInventoryData> parseInventory(String json) {
         if (json == null || json.isEmpty()) {
+            System.out.println("WARNING: Inventory JSON is null or empty");
             return new HashMap<>();
         }
         
         try {
-            return objectMapper.readValue(json, new TypeReference<Map<String, SizeInventoryData>>() {});
+            Map<String, SizeInventoryData> result = objectMapper.readValue(json, new TypeReference<Map<String, SizeInventoryData>>() {});
+            System.out.println("Parsed inventory with " + result.size() + " sizes");
+            return result;
         } catch (JsonProcessingException e) {
-            System.err.println("Error parsing inventory JSON: " + e.getMessage());
+            System.err.println("CRITICAL ERROR parsing inventory JSON: " + e.getMessage());
+            System.err.println("JSON was: " + json);
+            e.printStackTrace();
+            // Return empty map - this will cause data loss! Consider throwing instead
             return new HashMap<>();
         }
     }
@@ -215,8 +260,8 @@ public class ProductSizeInventoryService {
             result.add(new ProductSizeInventoryDTO(
                 null, // No separate ID
                 entry.getKey(),
-                data.quantity,
-                data.reserved
+                data.getQuantity(),
+                data.getReserved()
             ));
         }
         

@@ -178,19 +178,6 @@ public class OrderService {
         return response;
     }
 
-    public Order markAsReceived(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (!"DELIVERED".equals(order.getStatus())) {
-            throw new RuntimeException("Order must be delivered before marking as received.");
-        }
-
-        order.setStatus("RECEIVED");
-        return orderRepository.save(order);
-    }
-
-
     private OrderResponse.OrderItemResponse convertOrderItemToResponse(OrderItem orderItem) {
         OrderResponse.OrderItemResponse response = new OrderResponse.OrderItemResponse();
         response.setProductId(orderItem.getProductId());

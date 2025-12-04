@@ -15,6 +15,10 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
     navigate('/shoes')
   }
 
+  const handleMyOrders = () => {
+    navigate('/orders')
+  }
+
   const handleCheckout = () => {
     if (isAuthenticated) {
       navigate('/checkout')
@@ -90,10 +94,15 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
         <div className="cart-container">
           <div className="cart-empty">
             <h2>Your Cart is Empty</h2>
-            <p>Start shopping to add items to your cart!</p>
-            <button className="btn-primary" onClick={handleContinueShopping}>
-              Continue Shopping
-            </button>
+            <p>Looks like you haven't added anything yet. Start shopping or check your previous orders!</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+              <button className="btn-primary" onClick={handleContinueShopping}>
+                Continue Shopping
+              </button>
+              <button className="btn-primary" onClick={handleMyOrders}>
+                My Orders
+              </button>
+            </div>
           </div>
         </div>
       </div>

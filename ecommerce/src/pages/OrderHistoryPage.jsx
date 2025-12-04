@@ -27,8 +27,13 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
   const [editingReview, setEditingReview] = useState(null)
   const [productReviews, setProductReviews] = useState({}) // Cache for product reviews
   
+  // Review Queue State (for sequential multi-item reviews)
+  const [reviewQueue, setReviewQueue] = useState([])  // Items pending review
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
+  
   // Success Modal State
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [reviewsSubmittedCount, setReviewsSubmittedCount] = useState(0) // Track how many reviews were submitted
   
   useEffect(() => {
     fetchUserOrders()
@@ -229,22 +234,39 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
       
       const order = orderDetailsResponse.data
       
-      console.log('Order data:', order) // Debug
-      console.log('Order items:', order.orderItems) // Debug
+      console.log('Order data:', order)
+      console.log('Order items:', order.orderItems)
       
-      // If order has items, prompt user to review the first item
+      // Build queue of unreviewed items
       if (order.orderItems && order.orderItems.length > 0) {
-        const firstItem = order.orderItems[0]
-        console.log('First item:', firstItem) // Debug
+        const unreviewedItems = []
         
-        // Try to get productId from the order item
-        const productId = firstItem.productId || firstItem.product?.id
-        console.log('Product ID:', productId) // Debug
+        for (const item of order.orderItems) {
+          const productId = item.productId || item.product?.id
+          if (productId) {
+            // Check if user already reviewed this product
+            const existingReview = await fetchUserReviewForProduct(productId)
+            if (!existingReview) {
+              unreviewedItems.push({
+                productId,
+                productName: item.productName || item.product?.name || 'Product'
+              })
+            }
+          }
+        }
         
-        if (productId) {
-          // Immediately open review modal without alert
-          setReviewProductId(productId)
-          setReviewProductName(firstItem.productName || firstItem.product?.name || 'Product')
+        console.log('Unreviewed items:', unreviewedItems)
+        
+        // If there are unreviewed items, start the review flow
+        if (unreviewedItems.length > 0) {
+          setReviewQueue(unreviewedItems)
+          setCurrentReviewIndex(0)
+          setReviewsSubmittedCount(0)
+          
+          // Open review modal for the first unreviewed item
+          const firstItem = unreviewedItems[0]
+          setReviewProductId(firstItem.productId)
+          setReviewProductName(firstItem.productName)
           setShowReviewModal(true)
         }
       }
@@ -252,6 +274,44 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
       console.error('Error marking order as received:', error)
       alert(error.response?.data?.message || error.response?.data || 'Failed to mark order as received. Please try again.')
     }
+  }
+
+  // Process next review in the queue
+  const processNextReview = (submitted = false) => {
+    if (submitted) {
+      setReviewsSubmittedCount(prev => prev + 1)
+    }
+    
+    const nextIndex = currentReviewIndex + 1
+    
+    if (nextIndex < reviewQueue.length) {
+      // There are more items to review
+      setCurrentReviewIndex(nextIndex)
+      const nextItem = reviewQueue[nextIndex]
+      setReviewProductId(nextItem.productId)
+      setReviewProductName(nextItem.productName)
+      setShowReviewModal(true)
+    } else {
+      // No more items - end the review flow
+      setShowReviewModal(false)
+      setReviewQueue([])
+      setCurrentReviewIndex(0)
+      
+      // Show success modal if at least one review was submitted
+      if (submitted || reviewsSubmittedCount > 0) {
+        setShowSuccessModal(true)
+      }
+    }
+  }
+
+  // Handle skipping a review (move to next without submitting)
+  const handleSkipReview = () => {
+    setShowReviewModal(false)
+    
+    // Small delay to allow modal to close before opening next
+    setTimeout(() => {
+      processNextReview(false)
+    }, 100)
   }
 
   const fetchUserReviewForProduct = async (productId) => {
@@ -437,7 +497,7 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
                   >
                     {loadingOrderDetails ? 'Loading...' : 'View Details'}
                   </button>
-                  {order.status === 'DELIVERED' && (
+                  {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
                     <button 
                       className="action-btn mark-received-btn"
                       onClick={() => handleMarkAsReceived(order.id)}
@@ -581,11 +641,24 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
           onClose={() => {
             setShowReviewModal(false)
             setEditingReview(null)
+            // If we're in a queue flow, reset the queue
+            if (reviewQueue.length > 0) {
+              setReviewQueue([])
+              setCurrentReviewIndex(0)
+            }
           }}
           productId={reviewProductId}
           productName={reviewProductName}
           editMode={!!editingReview}
           existingReview={editingReview}
+          // Pass queue info for progress display
+          queueInfo={reviewQueue.length > 1 ? {
+            current: currentReviewIndex + 1,
+            total: reviewQueue.length
+          } : null}
+          // Show skip button when in queue mode
+          showSkipButton={reviewQueue.length > 0}
+          onSkip={handleSkipReview}
           onReviewSubmitted={async () => {
             setShowReviewModal(false)
             setEditingReview(null)
@@ -599,7 +672,15 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
               }))
             }
             
-            setShowSuccessModal(true)
+            // If we're in a queue flow, process the next review
+            if (reviewQueue.length > 0) {
+              setTimeout(() => {
+                processNextReview(true)
+              }, 100)
+            } else {
+              // Single review mode - show success immediately
+              setShowSuccessModal(true)
+            }
           }}
         />
       )}
@@ -648,7 +729,9 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
             margin: 0,
             width: '100%'
           }}>
-            Review submitted successfully! Thank you for your feedback.
+            {reviewsSubmittedCount > 1 
+              ? `${reviewsSubmittedCount} reviews submitted successfully! Thank you for your feedback.`
+              : 'Review submitted successfully! Thank you for your feedback.'}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ 
@@ -656,7 +739,10 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
           padding: '16px 24px'
         }}>
           <Button 
-            onClick={() => setShowSuccessModal(false)}
+            onClick={() => {
+              setShowSuccessModal(false)
+              setReviewsSubmittedCount(0)
+            }}
             variant="contained"
             sx={{
               background: 'linear-gradient(135deg, #ff6b35 0%, #f94c10 100%)',

@@ -17,7 +17,10 @@ const ReviewModal = ({
   productName, 
   onReviewSubmitted,
   editMode = false,
-  existingReview = null
+  existingReview = null,
+  queueInfo = null,  // { current: 1, total: 3 } for progress display
+  showSkipButton = false,
+  onSkip = null
 }) => {
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
@@ -126,8 +129,23 @@ const ReviewModal = ({
         background: 'linear-gradient(135deg, #ff6b35 0%, #f94c10 100%)',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
       }}>
-        {editMode ? 'Edit Your Review' : `Write a Review for ${productName}`}
+        <span>{editMode ? 'Edit Your Review' : `Write a Review for ${productName}`}</span>
+        {queueInfo && (
+          <span style={{ 
+            fontSize: '0.85rem', 
+            fontWeight: 400,
+            color: '#b3b3b3',
+            background: 'none',
+            WebkitBackgroundClip: 'unset',
+            WebkitTextFillColor: 'unset',
+          }}>
+            Review {queueInfo.current} of {queueInfo.total}
+          </span>
+        )}
       </DialogTitle>
       <DialogContent sx={{ pt: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -203,23 +221,45 @@ const ReviewModal = ({
       <DialogActions sx={{ 
         borderTop: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '16px 24px',
-        gap: 1
+        gap: 1,
+        justifyContent: 'space-between'
       }}>
-        <Button 
-          onClick={onClose} 
-          disabled={isSubmitting}
-          sx={{
-            color: '#b3b3b3',
-            textTransform: 'none',
-            fontSize: '1rem',
-            fontWeight: 600,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            },
-          }}
-        >
-          Cancel
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button 
+            onClick={onClose} 
+            disabled={isSubmitting}
+            sx={{
+              color: '#b3b3b3',
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              },
+            }}
+          >
+            {showSkipButton ? 'Close' : 'Cancel'}
+          </Button>
+          {showSkipButton && onSkip && (
+            <Button 
+              onClick={onSkip} 
+              disabled={isSubmitting}
+              sx={{
+                color: '#b3b3b3',
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 600,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                },
+              }}
+            >
+              Skip
+            </Button>
+          )}
+        </Box>
         <Button 
           onClick={handleSubmit} 
           variant="contained" 

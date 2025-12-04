@@ -14,7 +14,6 @@ import com.industryE.ecommerce.entity.User;
 import com.industryE.ecommerce.repository.ProductRepository;
 import com.industryE.ecommerce.repository.ReviewRepository;
 import com.industryE.ecommerce.repository.UserRepository;
-import com.industryE.ecommerce.service.ProductSizeInventoryService;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -27,9 +26,6 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private ReviewRepository reviewRepository;
-    
-    @Autowired
-    private ProductSizeInventoryService sizeInventoryService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -129,20 +125,23 @@ public class DataInitializer implements CommandLineRunner {
                 )
             );
             
-            productRepository.saveAll(sampleProducts);
+            // Build the inventory JSON with 50 quantity per size
+            String inventoryJson = buildInventoryJson(50);
+            System.out.println("Setting inventory JSON on all products: " + inventoryJson);
             
-            // Initialize size inventories for all products with good stock
-            List<String> standardSizes = Arrays.asList("7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12");
-            int defaultQuantityPerSize = 50; // Good inventory - 50 stocks per size
-            
+            // Set inventory on each product BEFORE saving
             for (Product product : sampleProducts) {
-                sizeInventoryService.initializeInventoryForProduct(product.getId(), standardSizes, defaultQuantityPerSize);
+                product.setSizeInventory(inventoryJson);
             }
             
+            // Save products with inventory already set
+            List<Product> savedProducts = productRepository.saveAll(sampleProducts);
+            
             System.out.println("Sample products and size inventories created successfully");
+            System.out.println("Saved " + savedProducts.size() + " products with inventory");
             
             // Create sample reviews
-            createSampleReviews(sampleProducts);
+            createSampleReviews(savedProducts);
         }
     }
     
@@ -236,5 +235,21 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             System.out.println("Admin user already exists");
         }
+    }
+    
+    /**
+     * Builds the inventory JSON string with the specified quantity per size.
+     * Format: {"7":{"quantity":50,"reserved":0},"7.5":{"quantity":50,"reserved":0},...}
+     */
+    private String buildInventoryJson(int quantityPerSize) {
+        String[] sizes = {"7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12"};
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = 0; i < sizes.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("\"").append(sizes[i]).append("\":");
+            sb.append("{\"quantity\":").append(quantityPerSize).append(",\"reserved\":0}");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }
