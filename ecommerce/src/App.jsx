@@ -170,29 +170,29 @@ function AppContent() {
       return
     }
 
-    const existingItem = cart.find(item => item.id === product.id && item.size === productSize)
-    let updatedCart
-
-    if (existingItem) {
-      updatedCart = cart.map(item =>
-        item.id === product.id && item.size === productSize
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      )
-    } else {
-      updatedCart = [...cart, { ...product, quantity, size: productSize }]
-    }
-    
-    setCart(updatedCart)
-    
-    // For authenticated users, sync with backend
+    // For authenticated users, sync with backend first
     if (isAuthenticated) {
       try {
-        await axios.post(`${API_BASE_URL}/cart/add`, {
+        const response = await axios.post(`${API_BASE_URL}/cart/add`, {
           productId: product.id,
           quantity: quantity,
           size: productSize
         })
+        
+        // Update cart with backend response (includes proper cartItemId)
+        if (response.data && response.data.items) {
+          const cartItems = response.data.items.map(item => ({
+            id: item.productId,
+            name: item.productName,
+            price: item.unitPrice,
+            quantity: item.quantity,
+            size: item.size,
+            image: getLocalImageForProduct(item.productId, item.productName),
+            color: 'Default',
+            cartItemId: item.id
+          }))
+          setCart(cartItems)
+        }
         
         // Show success toast
         setToast({
@@ -202,8 +202,6 @@ function AppContent() {
         })
       } catch (error) {
         console.error('Error syncing cart with backend:', error)
-        // Revert cart state if backend sync fails
-        setCart(cart)
         
         // Extract error message from backend response
         const errorMessage = error.response?.data?.message || 'Failed to add item to cart. Please try again.'
@@ -214,7 +212,21 @@ function AppContent() {
         return
       }
     } else {
-      // For guest users, save to localStorage
+      // For guest users, update local state and localStorage
+      const existingItem = cart.find(item => item.id === product.id && item.size === productSize)
+      let updatedCart
+
+      if (existingItem) {
+        updatedCart = cart.map(item =>
+          item.id === product.id && item.size === productSize
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        )
+      } else {
+        updatedCart = [...cart, { ...product, quantity, size: productSize }]
+      }
+      
+      setCart(updatedCart)
       localStorage.setItem('cart', JSON.stringify(updatedCart))
       setToast({
         message: `${quantity} ${product.name} (Size ${productSize}) added to cart! Please log in to save your cart.`,
