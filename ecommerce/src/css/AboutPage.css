@@ -111,7 +111,7 @@
   gap: 30px;
 }
 
-.about-page .stat-card {
+.about-page .about-stat-card {
   background: #1a1a1a !important;
   padding: 40px 20px !important;
   text-align: center;
@@ -119,9 +119,17 @@
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
   transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
+  height: auto;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.about-page .stat-card:hover {
+.about-page .about-stat-card:hover {
   transform: translateY(-5px);
   border-color: var(--accent-orange) !important;
   background: #2d2d2d !important;
@@ -134,7 +142,6 @@
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
-  margin-bottom: 10px;
   color: var(--accent-orange) !important;
 }
 
@@ -142,6 +149,22 @@
   font-size: 1.1rem !important;
   color: var(--text-gray) !important;
   font-weight: 500 !important;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .about-page .about-stat-card {
+    min-height: 150px;
+    padding: 32px 18px !important;
+  }
+
+  .about-page .stat-number {
+    font-size: 2.5rem !important;
+  }
+
+  .about-page .stat-label {
+    font-size: 1rem !important;
+  }
 }
 
 /* Values Section */
