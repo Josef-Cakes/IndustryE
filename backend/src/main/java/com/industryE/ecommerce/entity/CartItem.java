@@ -41,6 +41,9 @@ public class CartItem {
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private boolean selected = false;
     
     // Constructors
     public CartItem() {
@@ -83,4 +86,7 @@ public class CartItem {
             this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
         }
     }
+
+    public boolean isSelected() { return selected; }
+    public void setSelected(boolean selected) { this.selected = selected; }
 }

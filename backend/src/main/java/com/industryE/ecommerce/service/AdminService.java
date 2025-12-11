@@ -2,13 +2,14 @@ package com.industryE.ecommerce.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.industryE.ecommerce.Enum.PaymentStatus;
+import com.industryE.ecommerce.Enum.Status;
 import com.industryE.ecommerce.dto.AdminStatsResponse;
 import com.industryE.ecommerce.dto.OrderResponse;
 import com.industryE.ecommerce.dto.ProductDTO;
@@ -163,33 +164,60 @@ public class AdminService {
         return convertToOrderResponse(order);
     }
 
-    public OrderResponse updateOrderStatus(Long id, String status) {
-        Order order = orderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
-        
-        // Validate status
-        if (!isValidOrderStatus(status)) {
-            throw new RuntimeException("Invalid order status: " + status);
+    private boolean isValidOrderStatus(Status status) {
+        return status != null; // simple check, enum ensures type safety
+    }
+
+    //FOR ADMIN
+    public OrderResponse updateOrderStatusByAdmin(Long orderId, Status newStatus) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Rule: Cannot deliver unless payment is PAID
+        if (newStatus == Status.DELIVERED) {
+            if (order.getPaymentStatus() != PaymentStatus.COMPLETED) {
+                throw new RuntimeException("Cannot mark as DELIVERED. Payment status is not yet COMPLETED.");
+            }
         }
-        
-        order.setStatus(status.toUpperCase());
+
+        order.setStatus(newStatus);
         Order updatedOrder = orderRepository.save(order);
         return convertToOrderResponse(updatedOrder);
     }
 
-    public OrderResponse updateOrderPaymentStatus(Long id, String paymentStatus) {
+    //USER
+    public OrderResponse updateOrderStatus(Long id, Status status) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
-        
+
+        // Validate status
+        if (!isValidOrderStatus(status)) {
+            throw new RuntimeException("Invalid order status: " + status);
+        }
+
+        order.setStatus(status); // <-- convert string to enum
+        Order updatedOrder = orderRepository.save(order);
+        return convertToOrderResponse(updatedOrder);
+    }
+
+    private boolean isValidPaymentStatus(PaymentStatus paymentStatus) {
+        return paymentStatus != null;
+    }
+
+    public OrderResponse updateOrderPaymentStatus(Long id, PaymentStatus paymentStatus) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+
         // Validate payment status
         if (!isValidPaymentStatus(paymentStatus)) {
             throw new RuntimeException("Invalid payment status: " + paymentStatus);
         }
-        
-        order.setPaymentStatus(paymentStatus.toUpperCase());
+
+        order.setPaymentStatus(paymentStatus); // <-- directly set the enum
         Order updatedOrder = orderRepository.save(order);
         return convertToOrderResponse(updatedOrder);
     }
+
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByStatus(String status) {
@@ -197,23 +225,6 @@ public class AdminService {
         return orders.stream()
             .map(this::convertToOrderResponse)
             .collect(Collectors.toList());
-    }
-
-    private boolean isValidOrderStatus(String status) {
-        return status != null && 
-               (status.equalsIgnoreCase("PENDING") || 
-                status.equalsIgnoreCase("PROCESSING") ||
-                status.equalsIgnoreCase("SHIPPED") ||
-                status.equalsIgnoreCase("DELIVERED") ||
-                status.equalsIgnoreCase("COMPLETED") ||
-                status.equalsIgnoreCase("CANCELLED"));
-    }
-
-    private boolean isValidPaymentStatus(String paymentStatus) {
-        return paymentStatus != null && 
-               (paymentStatus.equalsIgnoreCase("PENDING") || 
-                paymentStatus.equalsIgnoreCase("PAID") ||
-                paymentStatus.equalsIgnoreCase("FAILED"));
     }
 
     // User Management

@@ -130,33 +130,6 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/orders/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
-        try {
-            OrderResponse updatedOrder = adminService.updateOrderStatus(id, status);
-            return ResponseEntity.ok(updatedOrder);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Failed to update order status: " + e.getMessage()));
-        }
-    }
-
-    @PutMapping("/orders/{id}/payment-status")
-    public ResponseEntity<?> updateOrderPaymentStatus(@PathVariable Long id, @RequestParam String paymentStatus) {
-        try {
-            OrderResponse updatedOrder = adminService.updateOrderPaymentStatus(id, paymentStatus);
-            return ResponseEntity.ok(updatedOrder);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Failed to update payment status: " + e.getMessage()));
-        }
-    }
 
     @GetMapping("/orders/status/{status}")
     public ResponseEntity<List<OrderResponse>> getOrdersByStatus(@PathVariable String status) {

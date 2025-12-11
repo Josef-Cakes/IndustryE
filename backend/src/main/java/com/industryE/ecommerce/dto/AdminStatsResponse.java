@@ -1,5 +1,7 @@
 package com.industryE.ecommerce.dto;
 
+import com.industryE.ecommerce.Enum.Status;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -91,13 +93,13 @@ public class AdminStatsResponse {
         private String orderNumber;
         private String customerName;
         private BigDecimal amount;
-        private String status;
+        private Status status;
         private String orderDate;
         
         public RecentOrderStats() {}
         
         public RecentOrderStats(Long orderId, String orderNumber, String customerName, 
-                               BigDecimal amount, String status, String orderDate) {
+                               BigDecimal amount, Status status, String orderDate) {
             this.orderId = orderId;
             this.orderNumber = orderNumber;
             this.customerName = customerName;
@@ -118,8 +120,8 @@ public class AdminStatsResponse {
         public BigDecimal getAmount() { return amount; }
         public void setAmount(BigDecimal amount) { this.amount = amount; }
         
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+        public Status getStatus() { return status; }
+        public void setStatus(Status status) { this.status = status; }
         
         public String getOrderDate() { return orderDate; }
         public void setOrderDate(String orderDate) { this.orderDate = orderDate; }

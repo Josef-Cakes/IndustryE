@@ -82,6 +82,18 @@ public class CartController {
                     .body(new ErrorResponse("Failed to update cart item: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/items/{itemId}/select")
+    public ResponseEntity<?> toggleSelect(
+            @PathVariable Long itemId,
+            @RequestBody boolean selected,
+            HttpServletRequest request
+    ) {
+        User user = getUserFromToken(request);
+        CartResponse resp = cartService.selectItem(user, itemId, selected);
+        return ResponseEntity.ok(resp);
+    }
+
     
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<?> removeFromCart(@PathVariable Long itemId,

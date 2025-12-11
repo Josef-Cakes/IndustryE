@@ -497,7 +497,7 @@ const OrderHistoryPage = ({ user, addToCart, setToast }) => {
                   >
                     {loadingOrderDetails ? 'Loading...' : 'View Details'}
                   </button>
-                  {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                  {order.status === 'DELIVERED' && order.paymentStatus === 'PAID' && (
                     <button 
                       className="action-btn mark-received-btn"
                       onClick={() => handleMarkAsReceived(order.id)}

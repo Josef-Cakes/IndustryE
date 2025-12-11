@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.industryE.ecommerce.Enum.Status;
+import com.industryE.ecommerce.Enum.PaymentStatus;
 import com.industryE.ecommerce.dto.CreateOrderRequest;
 import com.industryE.ecommerce.dto.OrderResponse;
 import com.industryE.ecommerce.entity.Order;
@@ -44,7 +46,7 @@ public class OrderService {
             order.setUser(user);
             order.setOrderNumber(generateOrderNumber());
             order.setTotalAmount(BigDecimal.valueOf(request.getTotalAmount()));
-            order.setStatus("PENDING");
+            order.setStatus(Status.PENDING);
 
             // Set shipping information
             if (request.getShippingInfo() != null) {
@@ -126,17 +128,25 @@ public class OrderService {
         // Ensure order belongs to the requesting user
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new RuntimeException("Order not found or access denied"));
+
+        if (order.getStatus() != Status.DELIVERED) {
+            throw new RuntimeException("Only delivered orders can be marked as received");
+        }
+
+        if (order.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            throw new RuntimeException("Cannot mark order as received — Payment is not completed");
+        }
         
         // Don't allow marking as received if already completed or cancelled
-        if (order.getStatus().equals("COMPLETED")) {
+        if (order.getStatus().equals(Status.COMPLETED)) {
             throw new RuntimeException("Order is already marked as completed");
         }
-        if (order.getStatus().equals("CANCELLED")) {
+        if (order.getStatus().equals(Status.CANCELLED)) {
             throw new RuntimeException("Cannot mark cancelled orders as received");
         }
         
         // Mark as COMPLETED
-        order.setStatus("COMPLETED");
+        order.setStatus(Status.COMPLETED);
         Order updatedOrder = orderRepository.save(order);
         
         return convertToResponse(updatedOrder);
@@ -178,6 +188,22 @@ public class OrderService {
         return response;
     }
 
+    @Transactional
+    public OrderResponse updateOrderStatus(Long orderId, Status newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // BLOCK IF PAYMENT NOT PAID
+        if (newStatus == Status.DELIVERED &&
+            order.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            throw new RuntimeException("Cannot mark as Delivered — Payment is not completed");
+        }
+
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+        return convertToResponse(order);
+    }
+    
     private OrderResponse.OrderItemResponse convertOrderItemToResponse(OrderItem orderItem) {
         OrderResponse.OrderItemResponse response = new OrderResponse.OrderItemResponse();
         response.setProductId(orderItem.getProductId());

@@ -1,5 +1,8 @@
 package com.industryE.ecommerce.dto;
 
+import com.industryE.ecommerce.Enum.PaymentStatus;
+import com.industryE.ecommerce.Enum.Status;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -8,10 +11,10 @@ public class OrderResponse {
     private Long id;
     private String orderNumber;
     private BigDecimal totalAmount;
-    private String status;
+    private Status status;
     private LocalDateTime orderDate;
     private String paymentMethod;
-    private String paymentStatus;
+    private PaymentStatus paymentStatus;
     private ShippingInfo shippingInfo;
     private List<OrderItemResponse> orderItems;
     
@@ -28,8 +31,8 @@ public class OrderResponse {
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
     
     public LocalDateTime getOrderDate() { return orderDate; }
     public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
@@ -37,8 +40,8 @@ public class OrderResponse {
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     
-    public String getPaymentStatus() { return paymentStatus; }
-    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
     
     public ShippingInfo getShippingInfo() { return shippingInfo; }
     public void setShippingInfo(ShippingInfo shippingInfo) { this.shippingInfo = shippingInfo; }

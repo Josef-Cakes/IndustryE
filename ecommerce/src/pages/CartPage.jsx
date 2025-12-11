@@ -1,43 +1,50 @@
 import React, { useState } from "react"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom"
 import '../css/CartPage.css'
 import CartItem from '../components/CartItem'
 
 const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user }) => {
   const navigate = useNavigate()
   const [loadingItems, setLoadingItems] = useState(new Set())
-  
+  const [selectedItems, setSelectedItems] = useState(new Set()) // store keys: `${id}-${size||'no-size'}`
+
   const calculateTotal = () => {
+    // Optionally calculate total for all or selected — here it's all
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
   }
 
-  const handleContinueShopping = () => {
-    navigate('/shoes')
-  }
-
-  const handleMyOrders = () => {
-    navigate('/orders')
-  }
+  const handleContinueShopping = () => navigate('/shoes')
+  const handleMyOrders = () => navigate('/orders')
 
   const handleCheckout = () => {
-    if (isAuthenticated) {
-      navigate('/checkout')
-    } else {
-      navigate('/login')
+    if (selectedItems.size === 0) {
+      alert("Please select at least one item to checkout.")
+      return
     }
+
+    // Build selected cart items array
+    const selectedCartItems = cart.filter(item => 
+      selectedItems.has(`${item.id}-${item.size || 'no-size'}`)
+    )
+
+    if (selectedCartItems.length === 0) {
+      alert("No selected items found. Please try again.")
+      return
+    }
+
+    // Navigate to checkout with selected items in state
+    navigate('/checkout', { state: { selectedCartItems } })
   }
 
-  const handleLogin = () => {
-    navigate('/login')
-  }
+  const handleLogin = () => navigate('/login')
 
   const handleUpdateQuantity = async (id, newQuantity, size) => {
     const itemKey = `${id}-${size || 'no-size'}`
     setLoadingItems(prev => new Set([...prev, itemKey]))
     
     try {
-      console.log('Updating quantity:', { id, newQuantity, size })
       await updateQuantity(id, newQuantity, size)
+      // keep selection as-is
     } catch (error) {
       console.error('Error updating quantity:', error)
     } finally {
@@ -54,8 +61,13 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
     setLoadingItems(prev => new Set([...prev, itemKey]))
     
     try {
-      console.log('Removing from cart:', { id, size })
       await removeFromCart(id, size)
+      // remove from selection if it was selected
+      setSelectedItems(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(itemKey)
+        return newSet
+      })
     } catch (error) {
       console.error('Error removing from cart:', error)
     } finally {
@@ -65,6 +77,17 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
         return newSet
       })
     }
+  }
+
+  // Toggle selection for a given item
+  const toggleSelectItem = (item, checked) => {
+    const key = `${item.id}-${item.size || 'no-size'}`
+    setSelectedItems(prev => {
+      const newSet = new Set(prev)
+      if (checked) newSet.add(key)
+      else newSet.delete(key)
+      return newSet
+    })
   }
 
   if (!isAuthenticated) {
@@ -109,6 +132,12 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
     )
   }
 
+  // Optional: number of selected items and selected total
+  const selectedCount = selectedItems.size
+  const selectedTotal = cart
+    .filter(item => selectedItems.has(`${item.id}-${item.size || 'no-size'}`))
+    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+
   return (
     <div className="cart-page">
       <div className="cart-container">
@@ -120,12 +149,15 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
           {cart.map((item) => {
             const itemKey = `${item.id}-${item.size || 'no-size'}`
             const isLoading = loadingItems.has(itemKey)
+            const isSelected = selectedItems.has(itemKey)
             
             return (
               <CartItem
                 key={itemKey}
                 item={item}
                 isLoading={isLoading}
+                isSelected={isSelected}
+                onSelect={toggleSelectItem}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemove={handleRemoveFromCart}
               />
@@ -141,21 +173,39 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, isAuthenticated, user 
 
         <div className="cart-summary">
           <h3>Order Summary</h3>
+
           <div className="summary-row">
-            <span>Subtotal</span>
+            <span>Selected Items</span>
+            <span>{selectedCount} item{selectedCount !== 1 ? 's' : ''}</span>
+          </div>
+
+          <div className="summary-row">
+            <span>Selected Total</span>
+            <span>₱ {selectedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+
+          <div className="summary-row">
+            <span>Subtotal (all)</span>
             <span>₱ {calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
+
           <div className="summary-row">
             <span>Shipping</span>
             <span>Free</span>
           </div>
+
           <div className="summary-total">
-            <span>Total</span>
-            <span>₱ {calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>Total (selected)</span>
+            <span>₱ {selectedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           
           {isAuthenticated ? (
-            <button className="checkout-btn btn-primary" onClick={handleCheckout}>
+            <button
+              className="checkout-btn btn-primary"
+              onClick={handleCheckout}
+              disabled={selectedItems.size === 0}
+              title={selectedItems.size === 0 ? 'Select at least 1 item to checkout' : 'Proceed to checkout'}
+            >
               Proceed to Checkout
             </button>
           ) : (

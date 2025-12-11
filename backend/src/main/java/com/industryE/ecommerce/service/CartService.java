@@ -109,6 +109,21 @@ public class CartService {
         return getCartByUser(user);
     }
 
+    public CartResponse selectItem(User user, Long itemId, boolean selected) {
+        CartItem item = cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+
+        if (!item.getCart().getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        item.setSelected(selected);
+        cartItemRepository.save(item);
+
+        return getCartByUser(user);
+    }
+
+
     public CartResponse updateCartItem(User user, Long cartItemId, UpdateCartItemRequest request) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new RuntimeException("Cart item not found"));
